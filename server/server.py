@@ -1,6 +1,5 @@
 # Globals #
 
-
 from bson.errors import InvalidId
 from bson.objectid import ObjectId
 from flask import Flask, jsonify, request, json, abort
@@ -80,62 +79,71 @@ def check_user():
 
 
 def prepare_message_json(message):
-	return {"documents": [
-		{
-			"language": "en",
-			"id"      : "1",
-			"text"    : "{}".format(message)
-		}
-	]
+	message_json = {"documents":
+		[
+			{
+				"language": "en",
+				"id"      : "1",
+				"text"    : "{}".format(message)
+			}
+		]
 	}
+
+	print(message_json)
+	return message_json
 
 
 def analyze_sentiment(chron_message_list):
-	"""Takes a chronologically ordered list of messages -> format: (author, message, timestamp)
+	"""Takes a chronologically ordered list of messages in format: (author, message, timestamp)
 	and returns an ordered dictionary of message hashes and their corresponding sentiment values, scaled between -1 and 1."""
 
+	# Surprise! Actually returns a chronologically ordered list of tuples
+	#   Format: (author, message_hash, normalized_sentiment, timestamp)
+
 	# Azure sentiment analysis
-	# TODO: Scaling -> Subtract 50 and then divide by 2
-	# TODO: Analyze sentiment for subset of the conversation? Patterns? ABA
 	# TODO: Remove API_keys/figure out how to store those
 	#
 	# key1: 0d67adf8bc524458ab03de128db96426
-	# API call to endpoint -> https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment
-	#
+
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-	message_sentiment_dict = collections.OrderedDict()
+	message_sentiment_list = []
 
 	for message in chron_message_list:
+		author, text, timestamp = message[0], message[1], message[2]
 
-		text = message[1]
-
-		# Encode string as bytes before hashing it w/ SHA1
+		# Encode string as bytes before hashing w/ SHA1
 		message_hash = hashlib.sha1(str.encode(text)).hexdigest()
 
-		# API Request for sentiment score if we don't have it already
-		if message_hash not in message_sentiment_dict:
-			sentiment = sentiment_api_request(text)
-			normalized_sentiment = (sentiment - 0.5) * 2
+		# Get normalized sentiment (between -1.0 and 1.0) score for each message.
+		print(json.dumps(sentiment_api_request(text)))
+		# TODO: Test this
+		try:
+			sentiment_score = json.loads(sentiment_api_request(text))["documents"][0]["score"]
+			normalized_sentiment = (sentiment_score - 0.5) * 2
+			message_sentiment_list.extend((author, message_hash, normalized_sentiment, timestamp))
+		except Exception as e:
+			print("Sentiment Analysis Error")
+			print("[Errno {0}] {1}".format(e.errno, e.strerror))
 
-
-		# message_sentiment_dict[message_hash] = (message[0], normalized_sentiment, timestamp)
-
-	pass
+	return message_sentiment_list
 
 
 def sentiment_api_request(message):
 	"""Make request to Azure Sentiment API with conversation text."""
 
-	# Azure Sentiment API Documentation
+	# API endpoint -> https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment
+
 	# https://westus.dev.cognitive.microsoft.com/docs/services/TextAnalytics.V2.0/operations/56f30ceeeda5650db055a3c9
+	# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
+	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
 	subscription_key = "fc250c2ad92544d983593f1595fb473a"
 
+	# Request headers
 	headers = {
-		# Request headers
-		'Content-Type'             : 'application/json',
-		'Ocp-Apim-Subscription-Key': '{subscription_key}',
+		'Content-Type': 'application/json',
+		'Ocp-Apim-Subscription-Key': '{}'.format(subscription_key),
 	}
 
 	params = urllib.parse.urlencode({})
@@ -143,9 +151,11 @@ def sentiment_api_request(message):
 	try:
 		conn = http.client.HTTPSConnection('westus.api.cognitive.microsoft.com')
 		request_json = prepare_message_json(message)
-		conn.request("POST", "/text/analytics/v2.0/sentiment?%s" % params, "{request_json}", headers)
+		# TODO: Solve `can't concat str to bytes` JSON issue -> https://stackoverflow.com/a/45037777/8740440
+		conn.request("POST", "/text/analytics/v2.0/sentiment?%s" % params, request_json, headers)
 		response = conn.getresponse()
-		sentiment_score = response.read()
+		# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
+		sentiment_score = json.dumps(response.read())
 		print(message, "\t->\t", sentiment_score)
 		conn.close()
 		return sentiment_score
