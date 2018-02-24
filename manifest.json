@@ -1,0 +1,31 @@
+{
+  "name": "TypeSense",
+  "description": "TypeSense tracks the sentiment of Facebook Messenger conversations in real time.",
+  "version": "0.1",
+  "manifest_version": 2,
+  "permissions": [
+    "contextMenus",
+    "http://localhost:5000/TypeSense/api/*",
+    "identity",
+    "storage",
+    "activeTab"
+  ],
+  "browser_action": {
+    "default_title": "TypeSense",
+    "default_icon": "extension/assets/icon.png",
+    "default_popup": "extension/content/popup.html"
+  },
+  "web_accessible_resources": [],
+  "background": {
+    "scripts": ["extension/background.js"]
+  },
+  "content_scripts": [{
+    "matches": [
+      "http://messenger.com/*",
+      "https://messenger.com/*",
+      "http://www.messenger.com/*",
+      "https://www.messenger.com/*"
+    ],
+    "js": ["extension/libraries/jquery-3.2.1.min.js"]
+  }],
+}

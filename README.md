@@ -1,2 +1,3 @@
-# Conversation-Aid
-A chrome extension that tracks a conversation's sentiment in real-time, designed to help users diagnosed with ASD
+TypeSense
+======
+Chrome extension that tracks the sentiment of Facebook Messenger conversations in real-time, designed to help users with autism. Born at HackIllinois.
