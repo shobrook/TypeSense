@@ -35,7 +35,6 @@ Conversations: {"_id": ObjectId("..."), "messages": {"Hash": 0, ...}}
 def analyze_sentiment(messages_list):
 	"""Takes an ordered list of dictionaries in format: { "author" : "", "message" : "" }
 	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
-
     Normalized sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
 
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
@@ -60,12 +59,10 @@ def analyze_sentiment(messages_list):
 
     message_sentiment_impact = individual_message_sentiment_impact(message_sentiments)
 
-    # list of tuples in format: (last_message_hash, change in sentiment of last message, author)
-    # dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
+    # message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
+    # return dict in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
 
-    message_sent_dict = {item[0]:{"Sentiment": item[1], "Author": item[2]} for item in message_sentiment_impact}
-
-	return message_sent_dict
+	return {item[0]:{"Sentiment": item[1], "Author": item[2]} for item in message_sentiment_impact}
 
 
 def individual_message_sentiment_impact(message_sentiments):
@@ -73,9 +70,7 @@ def individual_message_sentiment_impact(message_sentiments):
     Returns a list of tuples in format: (last_message_hash, change in sentiment of last message, author)"""
 
     sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1] for i in range(len(message_sentiments))[1:]]
-
     messages_sentiment_change = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
-
     return messages_sentiment_change
 
 
@@ -87,7 +82,6 @@ def sentiment_api_request(message):
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
     subscription_key = "0d67adf8bc524458ab03de128db96426"
-
     api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
 
     # Request headers
@@ -108,8 +102,8 @@ def sentiment_api_request(message):
 
     response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
     sentiment_score = json.loads(response)["documents"][0]["score"]
-    normalized_sentiment = (sentiment_score - 0.5) * 2
-    return normalized_sentiment
+    # Normalization
+    return (sentiment_score - 0.5) * 2
 
 
 # Routing #
