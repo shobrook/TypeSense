@@ -77,27 +77,27 @@ def sentiment_api_request(message):
 	# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-	subscription_key = "0d67adf8bc524458ab03de128db96426"
+    subscription_key = "0d67adf8bc524458ab03de128db96426"
 
-	api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
+    api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
 
-	# Request headers
-	headers = {
-		'Content-Type': 'application/json',
-		'Ocp-Apim-Subscription-Key': subscription_key
-	}
+    # Request headers
+    headers = {
+    	'Content-Type': 'application/json',
+    	'Ocp-Apim-Subscription-Key': subscription_key
+    }
 
-	values = {"documents":
-		[
-			{
-				"language": "en",
-				"id"      : "1",
-				"text"    : message
-			}
-		]
-	}
+    values = {"documents":
+    	[
+    		{
+    			"language": "en",
+    			"id"      : "1",
+    			"text"    : message
+    		}
+    	]
+    }
 
-	response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
+    response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
     sentiment_score = json.loads(response)["documents"][0]["score"]
     normalized_sentiment = (sentiment_score - 0.5) * 2
     return normalized_sentiment
