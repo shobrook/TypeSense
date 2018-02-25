@@ -1,5 +1,5 @@
-var margin = {top: 30, right: 10, bottom: 50, left: 0},
-width = 320,
+var margin = {top: 0, right: 0, bottom: 0, left: 0},
+width = 400;
 height = 320;
 
 var data = [{sentiment: -10, id:0, author: true},
@@ -21,7 +21,7 @@ var data = [{sentiment: -10, id:0, author: true},
 {sentiment: -20, id:16, author: false}].reverse();
 
 // Add svg to
-var svg = d3.select('body').append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+var svg = d3.select('#graph').append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
 // set the ranges
 var y = d3.scaleBand()
@@ -47,13 +47,13 @@ svg.selectAll(".bar")
   return "bar bar--" + (d.sentiment < 0 ? "negative" : "positive");
 })
 .attr("x", function (d) {
-  return x(Math.min(5, d.sentiment * 0.5));
+  return x(Math.min(7, d.sentiment * 0.5));
 })
 .attr("y", function (d) {
   return y(d.id);
 })
 .attr("width", function (d) {
-  return Math.abs(x(d.sentiment * 0.5) - x(0));
+  return Math.abs(x(d.sentiment * 0.55) - x(0));
 })
 .attr("fill", function(d) {
   if (d.author) {
@@ -77,3 +77,21 @@ svg.selectAll(".bar")
 .attr("stroke-width", "2px")
 .attr("height", y.bandwidth())
 .attr("rx", "1.5px");
+
+svg.append("line")
+.attr("x1", (width / 2))
+.attr("y1", 0)
+.attr("x2", (width / 2))
+.attr("y2", height)
+.style("stroke-width", 2)
+.style("stroke", "#F1F0F0")
+.style("fill", "1");
+
+svg.append("line")
+.attr("x1", 0)
+.attr("y1", height - 1)
+.attr("x2", width)
+.attr("y2", height - 1)
+.style("stroke-width", 2)
+.style("stroke", "#F1F0F0")
+.style("fill", "1");

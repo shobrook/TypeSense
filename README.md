@@ -1,3 +1,29 @@
-TypeSense
-======
-Chrome extension that tracks the sentiment of Facebook Messenger conversations in real-time, designed to help users with autism. Born at HackIllinois.
+## TypeSense
+---
+
+TypeSense is a Chrome extension that tracks the sentiment of Facebook Messenger conversations in real-time, designed to help users with social deficits, like aspergers or autism.
+
+#### Project Features
+---
+
++ Visualization of the impact of each message on conversation sentiment
++ Preview impact of messages being drafted on conversation sentiment
++ Seamless integration with Messenger in Chrome
+
+
+#### Usage
+---
+
+1. Download a .zip of the file, and unzip it
+2. Open Chrome
+3. Enter `chrome://extensions` in the address bar
+4. Enable `Developer Mode`
+5. Click `Load Unpacked Extension` button and select extracted folder
+6. Make sure TypeSense is enabled
+7. Go to www.messenger.com and click the TypeSense button
+
+
+#### License
+---
+
+MIT
