@@ -1,5 +1,5 @@
 var margin = {top: 30, right: 10, bottom: 50, left: 0},
-width = 500,
+width = 320,
 height = 320;
 
 var data = [{sentiment: -10, id:0, author: true},
