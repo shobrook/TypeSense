@@ -28,6 +28,7 @@
       "http://www.messenger.com/*",
       "https://www.messenger.com/*"
     ],
-    "js": ["extension/libraries/jquery-3.2.1.min.js"]
+    "js": ["extension/libraries/jquery-3.2.1.min.js", "inject.js"],
+    "run_at": "document_end"
   }]
 }
