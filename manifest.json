@@ -27,5 +27,5 @@
       "https://www.messenger.com/*"
     ],
     "js": ["extension/libraries/jquery-3.2.1.min.js"]
-  }],
+  }]
 }
