@@ -1,7 +1,7 @@
 {
   "name": "TypeSense",
-  "description": "TypeSense tracks the sentiment of Facebook Messenger conversations in real time.",
-  "version": "0.1",
+  "description": "TypeSense displays the sentiment trend of Facebook Messenger conversations in real time.",
+  "version": "0.0.1",
   "manifest_version": 2,
   "permissions": [
     "contextMenus",
