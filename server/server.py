@@ -1,16 +1,14 @@
 # Globals #
 
+# import base64
+import hashlib
 
-from bson.errors import InvalidId
-from bson.objectid import ObjectId
+import requests
+
 from flask import Flask, jsonify, request, json, abort
 from flask_pymongo import PyMongo
-import http.client
-import urllib.request
-import urllib.parse
-import urllib.error
+
 import collections
-# import base64
 import hashlib
 import requests
 
@@ -42,33 +40,31 @@ def analyze_sentiment(messages_list):
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
     # Add dummy values to be able to calculate the impact on sentiment of all messages
-	messages_list.insert(0, {"author": "dummy_author0", "message": " "})
-	messages_list.insert(0, {"author": "dummy_author1", "message": " "})
-	messages_list.insert(0, {"author": "dummy_author2", "message": " "})
+    messages_list.insert(0, { "author" : "dummy_author0", "message" : " " } )
+    messages_list.insert(0, { "author" : "dummy_author1", "message" : " " } )
+    messages_list.insert(0, { "author" : "dummy_author2", "message" : " " } )
 
-	merged_messages = [(messages_list[i].get("message") + " " + messages_list[i+1].get("message") + " " + messages_list[i+2].get(
-	    "message"), messages_list[i+2].get("author"), messages_list[i+2].get("message")) for i in range(len(messages_list) - 2)]
+    merged_messages = [(messages_list[i].get("message") + " " + messages_list[i+1].get("message") + " " + messages_list[i+2].get("message"), messages_list[i+2].get("author"), messages_list[i+2].get("message")) for i in range(len(messages_list))]
 
-	message_sentiments = []
+    message_sentiments = []
 
-	for message in merged_messages:
-		message_combo, author, last_message = message[0], message[1], message[2]
-		# Encode string as bytes before hashing w/ SHA1
-		last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
+    for message in merged_messages:
+        message_combo, author, last_message = message[0], message[1], message[2]
+        # Encode string as bytes before hashing w/ SHA1
+        last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
 
-		# Get normalized sentiment (between -1.0 and 1.0) score for each message combo.
-		normalized_sentiment_impact = sentiment_api_request(message_combo)
-		message_sentiments.extend((last_message_hash, normalized_sentiment_impact, author))
+        # Get normalized sentiment (between -1.0 and 1.0) score for each message combo.
+        normalized_sentiment_impact = sentiment_api_request(message_combo)
+        message_sentiments.extend((last_message_hash, normalized_sentiment_impact, author))
 
-	# Isolate sentiment impact of each message
-	sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1]
-	    for i in range(len(message_sentiments))[1:]]
-	messages_sentiment_impact = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
+    # Isolate sentiment impact of each message
+    sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1] for i in range(len(message_sentiments))[1:]]
+    messages_sentiment_impact = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
 
     # message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
     # return list in format: [{"Hash": {"Sentiment" : 0, "Author" : "..."}}, ...]
 
-	return [{item[0]:{"Sentiment": item[1], "Author": item[2]}} for item in message_sentiment_impact]
+	return [ { item[0]:{"Sentiment": item[1], "Author": item[2] } } for item in message_sentiment_impact]
 
 
 def sentiment_api_request(message):
@@ -78,16 +74,16 @@ def sentiment_api_request(message):
 	# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-	subscription_key = "0d67adf8bc524458ab03de128db96426"
-	api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
+    subscription_key = "0d67adf8bc524458ab03de128db96426"
+    api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
 
     # Request headers
-	headers = {
+    headers = {
     	'Content-Type': 'application/json',
     	'Ocp-Apim-Subscription-Key': subscription_key
     }
 
-	values = {"documents":
+    values = {"documents":
     	[
     		{
     			"language": "en",
@@ -97,10 +93,10 @@ def sentiment_api_request(message):
     	]
     }
 
-	response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
-	sentiment_score = json.loads(response)["documents"][0]["score"]
-	# Normalization
-	return (sentiment_score - 0.5) * 2
+    response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
+    sentiment_score = json.loads(response)["documents"][0]["score"]
+    # Normalization
+    return (sentiment_score - 0.5) * 2
 
 
 # Routing #
