@@ -77,3 +77,12 @@ svg.selectAll(".bar")
 .attr("stroke-width", "2px")
 .attr("height", y.bandwidth())
 .attr("rx", "1.5px");
+
+svg.append("line")
+.attr("x1", (width / 2) - 8)
+.attr("y1", 0)
+.attr("x2", (width / 2) - 8)
+.attr("y2", height)
+.style("stroke-width", 3)
+.style("stroke", "#F1F0F0")
+.style("fill", "1");
