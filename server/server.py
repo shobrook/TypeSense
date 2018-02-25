@@ -12,7 +12,7 @@ import urllib.error
 import collections
 # import base64
 import hashlib
-
+import requests
 
 DEBUG = True
 
@@ -26,87 +26,81 @@ mongo = PyMongo(app)
 """
 DATA MODEL
 Collections: users, connections, conversations
-Users: {"_id": ObjectId("..."), "fb_username": "...", "email": "...", "password": "...", "connections": [ObjectId("..."), ...]}
-Connections: {"_id": ObjectId("..."), "fb_username": "...", "has_account": False, "conversations": {ObjectId("..."): ObjectId("..."), ...}}
-Conversations: {"_id": ObjectId("..."), "messages": {"Hash": 0, ...}}
+Users: {"_id": ObjectId("..."), "fb_id": "...", "email": "...", "password": "...", "connections": [ObjectId("..."), ...]}
+Connections: {"_id": ObjectId("..."), "fb_id": "...", "conversations": {ObjectId("..."): ObjectId("..."), ...}}
+Conversations: {"_id": ObjectId("..."), "messages": [{"Hash": {"Sentiment": 0, "Author": "..."}}, ...]}
 """
 
 
 # Helpers #
 
+def analyze_sentiment(messages_list):
+	"""Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
+	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
+    Normalized sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
 
-def prepare_message_json(message):
-    return {"documents": [
-            {
-                "language": "en",
-                "id": "1",
-                "text": "{}".format(message)
-            }
-            ]
-            }
+	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
+    # Add dummy values to be able to calculate the impact on sentiment of all messages
+	messages_list.insert(0, {"author": "dummy_author0", "message": " "})
+	messages_list.insert(0, {"author": "dummy_author1", "message": " "})
+	messages_list.insert(0, {"author": "dummy_author2", "message": " "})
 
-def analyze_sentiment(chron_message_list):
-    """Takes a chronologically ordered list of messages -> format: (author, message, timestamp)
-    and returns an ordered dictionary of message hashes and their corresponding sentiment values, scaled between -1 and 1."""
+	merged_messages = [(messages_list[i].get("message") + " " + messages_list[i+1].get("message") + " " + messages_list[i+2].get(
+	    "message"), messages_list[i+2].get("author"), messages_list[i+2].get("message")) for i in range(len(messages_list) - 2)]
 
-    # Azure sentiment analysis
-    # TODO: Scaling -> Subtract 50 and then divide by 2
-    # TODO: Analyze sentiment for subset of the conversation? Patterns? ABA
-    # TODO: Remove API_keys/figure out how to store those
-    #
-    # key1: 0d67adf8bc524458ab03de128db96426
-    # API call to endpoint -> https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment
-    #
-    # https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
+	message_sentiments = []
 
-    message_sentiment_dict = collections.OrderedDict()
+	for message in merged_messages:
+		message_combo, author, last_message = message[0], message[1], message[2]
+		# Encode string as bytes before hashing w/ SHA1
+		last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
 
-    for message in chron_message_list:
+		# Get normalized sentiment (between -1.0 and 1.0) score for each message combo.
+		normalized_sentiment_impact = sentiment_api_request(message_combo)
+		message_sentiments.extend((last_message_hash, normalized_sentiment_impact, author))
 
-        text = message[1]
+	# Isolate sentiment impact of each message
+	sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1]
+	    for i in range(len(message_sentiments))[1:]]
+	messages_sentiment_impact = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
 
-        # Encode string as bytes before hashing it w/ SHA1
-        message_hash = hashlib.sha1(str.encode(text)).hexdigest()
+    # message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
+    # return list in format: [{"Hash": {"Sentiment" : 0, "Author" : "..."}}, ...]
 
-        # API Request for sentiment score if we don't have it already
-        if message_hash not in message_sentiment_dict:
-            sentiment = sentiment_api_request(text)
-            normalized_sentiment = (sentiment - 0.5) * 2
-
-        # message_sentiment_dict[message_hash] = (message[0], normalized_sentiment, timestamp)
-
-    pass
+	return [{item[0]:{"Sentiment": item[1], "Author": item[2]}} for item in message_sentiment_impact]
 
 
 def sentiment_api_request(message):
-    """Make request to Azure Sentiment API with conversation text."""
+	"""Make request to Azure Sentiment API with text. Returns normalized sentiment score (between -1 and 1)"""
 
-    # Azure Sentiment API Documentation
-    # https://westus.dev.cognitive.microsoft.com/docs/services/TextAnalytics.V2.0/operations/56f30ceeeda5650db055a3c9
+	# https://westus.dev.cognitive.microsoft.com/docs/services/TextAnalytics.V2.0/operations/56f30ceeeda5650db055a3c9
+	# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
+	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-    subscription_key = "fc250c2ad92544d983593f1595fb473a"
+	subscription_key = "0d67adf8bc524458ab03de128db96426"
+	api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
 
-    headers = {
-        # Request headers
-        'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': '{subscription_key}',
+    # Request headers
+	headers = {
+    	'Content-Type': 'application/json',
+    	'Ocp-Apim-Subscription-Key': subscription_key
     }
 
-    params = urllib.parse.urlencode({})
+	values = {"documents":
+    	[
+    		{
+    			"language": "en",
+    			"id"      : "1",
+    			"text"    : message
+    		}
+    	]
+    }
 
-    try:
-        conn = http.client.HTTPSConnection('westus.api.cognitive.microsoft.com')
-        request_json = prepare_message_json(message)
-        conn.request("POST", "/text/analytics/v2.0/sentiment?%s" %
-                     params, "{request_json}", headers)
-        response = conn.getresponse()
-        sentiment_score = response.read()
-        print(message, "\t->\t", sentiment_score)
-        conn.close()
-        return sentiment_score
-    except Exception as e:
-        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+	response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
+	sentiment_score = json.loads(response)["documents"][0]["score"]
+	# Normalization
+	return (sentiment_score - 0.5) * 2
 
 
 # Routing #
@@ -118,10 +112,10 @@ def main():
     return 404
 
 
-@app.route("/typesense/api/new_user", methods=["POST"])
+@app.route("/TypeSense/api/create_user", methods=["POST"])
 def create_user():
-	"""Creates a new user document; also checks if email already exists. Payload
-	   format: {'email': '...', 'password': '...', 'fb_username': '...'}."""
+    """Creates a new user document; also checks if email already exists. Payload
+    format: {'email': '...', 'password': '...', 'fb_id': '...'}."""
     if not request.json or not "email" in request.json:
         abort(400, "new_user(): request.json does not exist or does not contain 'email'")
 
@@ -131,18 +125,18 @@ def create_user():
 
     user_id = mongo.db.users.insert({
         "email": request.json["email"],
-        "password": request.json["password"], # NOTE: Password is stored insecurely
-        "fb_username": request.json["fb_username"],
+        "password": request.json["password"],  # NOTE: Password is stored insecurely
+        "fb_id": request.json["fb_id"],
         "connections": []
     })
 
     return jsonify({"registered": True})
 
 
-@app.route("/TypeSense/api/check_user", methods=["POST"])
+@app.route("/TypeSense/api/validate_user", methods=["POST"])
 def validate_user():
-	"""Checks if login credentials are valid. Payload format: {'email': '...',
-	   'password': '...'}."""
+    """Checks if login credentials are valid. Payload format: {'email': '...',
+    'password': '...'}."""
     if not request.json or not "email" in request.json:
         abort(400, "check_user(): request.json does not exist or does not contain 'email'")
 
@@ -153,75 +147,75 @@ def validate_user():
     return jsonify({"logged_in": False})
 
 
-@app.route("/TypeSense/api/new_connection", methods=["POST"])
-def switch_conversation():
-	"""Handles a conversation change. Returns sentiment scores for the new conversation's
-	   most recent messages. Payload format: {'email': '...', 'fb_username': '...',
-	   'messages': [('author', 'message', 'timestamp'), ...]}."""
-    if not request.json or not "facebook_id" in request.json:
-        abort(400, "new_connection(): request.json does not exist or does not contain 'facebook_id'")
+@app.route("/TypeSense/api/change_conversation", methods=["POST"])
+def change_conversation():
+    """Handles a conversation change. Returns sentiment scores for the new conversation's
+    most recent messages. Payload format: {'email': '...', 'fb_id': '...',
+    'messages': [{'author': True, 'message': '...'}, ...]}."""
+    if not request.json or not "fb_id" in request.json:
+        abort(400, "new_connection(): request.json does not exist or does not contain 'fb_id'")
 
-	# Pull current user ID
-	# Check if connection already exists
-		# If yes, then check if conversation already exists
-			# If yes, then hash messages, filter messages that are already analyzed, analyze the remaining messages, and then push analyzed messages to the conversation dict (or list, idk)
-			# If no, analyze all messages, create converstaion entry, and then append to connection's conversations
-		# If no, insert new connection and link up with the user's connections array
+    user = mongo.db.users.find_one({"email": request.json["email"]})
+    messages = analyze_sentiment(request.json["messages"])
 
-	user = mongo.db.users.find_one({"email": request.json["email"]})
+    for cxn in mongo.db.connections.find():
+        # Connection exists
+        if cxn["fb_id"] == request.json["fb_id"]:
+            for user_cxn in user["connections"]:
+                # Connection already has a conversation open with user
+                connection = mongo.db.connections.find_one({"_id": ObjectId(str(user_cxn))})
+                if connection["fb_id"] == request.json["fb_id"]:
+                    conversation = mongo.db.conversations.find_one({"_id": connection["Conversations"][str(user["_id"])]})["Messages"]
 
-	conversation_exists = False
-	for connection in user["connections"]:
-		if request.json["fb_username"] == (mongo.db.connections.find_one({"_id": connection}))["fb_username"]:
-			conversation_exists = True
-			# Hash messages, filter messages that have already been analyzed, analyze the remaining messages, and then push
-			# analyzed messages to the conversation dict (or list, idk)
+                    db_hashes = [message_hash for message_hash in list(conversation.keys())]
 
-	if not conversation_exists:
+                    payload_hashes = [{hashlib.sha1(str.encode(message["message"])).hexdigest(): message["message"]} for message in request.json["messages"]]
 
-	# Iterate through user's connections, check if any match w/ current connections
-		# If so, then conversation already exists and do shit
-		# If no, then iterate through all connections and see if any match w/ this guy
-			# If yes, then
+                    filtered_messages = [payload_hashes[message] for message in payload_hashes.keys() if message not in all_hashes]
 
-    # messages = analyze_sentiment(request.json["conversations"])
-    has_account = False
+                    analysis_input = [message for message in request.json["messages"] if message["message"] in filtered_messages]
+                    analyzed_messages = analyze_sentiment(analysis_input)
 
-    for u in mongo.db.users.find():
-        if u["facebook_id"] == request.json["facebook_id"]:
-            has_account = True
+                    final_messages = (conversation + analyzed_messages)
+                    final_messages = final_messages[len(final_messages) - 20:]
 
-    user_id = mongo.db.users.find({"email": request.json["email"]})
-    conversation_id = mongo.db.conversations.insert({"messages": messages})
+                    mongo.db.conversations.insert(
+                        {"_id": connection["Conversations"][str(user["_id"])]},
+                        {"messages": final_messages}
+                    )
 
-    connection_exists = False
-    for c in mongo.db.connections.find():
-        if c["facebook_id"] == request.json["facebook_id"]:
-            connection_exists = True
-            connection_id = mongo.db.connections.update(
-                {"facebook_id": c["facebook_id"]},
-                {"$set": {"conversations" + ObjectId(str(user_id)): ObjectId(str(conversation_id))}}
+                    return jsonify({"messages": final_messages})
+            conversation = mongo.db.conversations.insert({"messages": messages})
+            connection = mongo.db.connections.update(
+                {"fb_id": cxn["fb_id"]},
+                {"$set": {"conversations" + str(user["_id"]): str(conversation["_id"])}}
             )
+            mongo.db.users.update({
+                {"fb_id": user["fb_id"]},
+                {"$push": {"connections": ObjectId(str(connection["_id"]))}}
+            })
 
-    if not connection_exists:
-        connection_id = mongo.db.connections.insert({
-            "facebook_id": request.json["facebook_id"],
-            "has_acccount": has_account,
-            "conversations": {str(user_id): conversation_id}
-        })
+            return jsonify({"messages": messages})
 
-    mongo.db.users.find(
-        {"email": request.json["email"]},
-        {"$push": {"connections": connection_id}}
-    )
+    # Connection doesn't exist
+    connection = mongo.db.connections.insert({
+        "fb_id": request.json["fb_id"],
+        "conversations": {str(user["_id"]): str(conversation["_id"])}
+    })
+    mongo.db.users.update({
+        {"fb_id": user["fb_id"]},
+        {"$push": {"connections": ObjectId(str(connection["_id"]))}}
+    })
 
-    return messages
+    return jsonify({"messages": messages})
 
 
 @app.route("/TypeSense/api/new_message", methods=["POST"])
 def new_message():
+    return
 
-    # Error Handling #
+
+# Error Handling #
 
 
 def error_print(status_code, error):
