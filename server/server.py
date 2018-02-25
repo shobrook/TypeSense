@@ -33,41 +33,50 @@ Conversations: {"_id": ObjectId("..."), "messages": {"Hash": 0, ...}}
 # Helpers #
 
 def analyze_sentiment(messages_list):
-	"""Takes a chronologically ordered list of messages in format: (author, message, timestamp)
-	and returns a list of tuples containing (message_combo_hash, normalized_sentiment, timestamp). Normalized
-	sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
+	"""Takes an ordered list of dictionaries in format: { "author" : "", "message" : "" }
+	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
+
+    Normalized sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
 
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-    if not len(messages_list) > 2:
-        print("ERROR: Fewer than two messages in messages_list.")
+    # Add dummy values to be able to calculate the impact on sentiment of all messages
+    messages_list.insert(0, ("dummy_author0", "0", "21:00"))
+    messages_list.insert(0, ("dummy_author1", "0", "21:01"))
+    messages_list.insert(0, ("dummy_author2", "0", "21:02"))
 
-    merged_messages = [(messages_list[i][1] + " " + messages_list[i+1][1] + " " + messages_list[i+2][1], messages_list[i][2]) for i in range(len(messages_list))]
+    merged_messages = [(messages_list[i].get("message") + " " + messages_list[i+1].get("message") + " " + messages_list[i+2].get("message"), messages_list[i+2].get("author"), messages_list[i+2].get("message")) for i in range(len(messages_list))]
 
     message_sentiments = []
 
     for message in merged_messages:
-        message_combo, timestamp = message[0], message[1]
+        message_combo, author, last_message = message[0], message[1], message[2]
         # Encode string as bytes before hashing w/ SHA1
-        message_combo_hash = hashlib.sha1(str.encode(message_combo)).hexdigest()
+        last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
 
         # Get normalized sentiment (between -1.0 and 1.0) score for each message combo.
-        try:
-            normalized_sentiment = sentiment_api_request(message_combo)
-            message_sentiments.extend((message_combo_hash, normalized_sentiment, timestamp))
-        except Exception as e:
-            print("Sentiment Analysis Error")
-            print("[Errno {0}] {1}".format(e.errno, e.strerror))
+        normalized_sentiment_impact = sentiment_api_request(message_combo)
+        message_sentiments.extend((last_message_hash, normalized_sentiment_impact, author))
 
-	return message_sentiments
+    message_sentiment_impact = individual_message_sentiment_impact(message_sentiments)
+
+    # list of tuples in format: (last_message_hash, change in sentiment of last message, author)
+    # dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
+
+    message_sent_dict = {item[0]:{"Sentiment": item[1], "Author": item[2]} for item in message_sentiment_impact}
+
+	return message_sent_dict
 
 
 def individual_message_sentiment_impact(message_sentiments):
-    """Takes list of tuples containing (message_combo_hash, normalized_sentiment, timestamp). Returns a list of
-    the change in sentiment of each successive message."""
+    """Takes list of tuples containing (last_message_hash, normalized_sentiment_impact, author).
+    Returns a list of tuples in format: (last_message_hash, change in sentiment of last message, author)"""
 
     sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1] for i in range(len(message_sentiments))[1:]]
-    return sentiment_change
+
+    messages_sentiment_change = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
+
+    return messages_sentiment_change
 
 
 def sentiment_api_request(message):
