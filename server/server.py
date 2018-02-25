@@ -32,62 +32,78 @@ Conversations: {"_id": ObjectId("..."), "messages": {"Hash": 0, ...}}
 
 # Helpers #
 
-def analyze_sentiment(chron_message_list):
-	"""Takes a chronologically ordered list of messages in format: (author, message, timestamp)
-	and returns an ordered list of tuples containing (author, message_hash, normalized_sentiment, timestamp). Normalized
-	sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
+def analyze_sentiment(messages_list):
+	"""Takes an ordered list of dictionaries in format: { "author" : "", "message" : "" }
+	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
+    Normalized sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
 
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-	message_sentiment_list = []
+    # Add dummy values to be able to calculate the impact on sentiment of all messages
+    messages_list.insert(0, { "author" : "dummy_author0", "message" : " " } )
+    messages_list.insert(0, { "author" : "dummy_author1", "message" : " " } )
+    messages_list.insert(0, { "author" : "dummy_author2", "message" : " " } )
 
-	for message in chron_message_list:
-		author, text, timestamp = message[0], message[1], message[2]
+    merged_messages = [(messages_list[i].get("message") + " " + messages_list[i+1].get("message") + " " + messages_list[i+2].get("message"), messages_list[i+2].get("author"), messages_list[i+2].get("message")) for i in range(len(messages_list))]
 
-		# Encode string as bytes before hashing w/ SHA1
-		message_hash = hashlib.sha1(str.encode(text)).hexdigest()
+    message_sentiments = []
 
-		# Get normalized sentiment (between -1.0 and 1.0) score for each message.
-		try:
-			sentiment_score = sentiment_api_request(text)
-			normalized_sentiment = (sentiment_score - 0.5) * 2
-			message_sentiment_list.extend((author, message_hash, normalized_sentiment, timestamp))
-		except Exception as e:
-			print("Sentiment Analysis Error")
-			print("[Errno {0}] {1}".format(e.errno, e.strerror))
+    for message in merged_messages:
+        message_combo, author, last_message = message[0], message[1], message[2]
+        # Encode string as bytes before hashing w/ SHA1
+        last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
 
-	return message_sentiment_list
+        # Get normalized sentiment (between -1.0 and 1.0) score for each message combo.
+        normalized_sentiment_impact = sentiment_api_request(message_combo)
+        message_sentiments.extend((last_message_hash, normalized_sentiment_impact, author))
+
+    message_sentiment_impact = individual_message_sentiment_impact(message_sentiments)
+
+    # message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
+    # return dict in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
+
+	return {item[0]:{"Sentiment": item[1], "Author": item[2]} for item in message_sentiment_impact}
+
+
+def individual_message_sentiment_impact(message_sentiments):
+    """Takes list of tuples containing (last_message_hash, normalized_sentiment_impact, author).
+    Returns a list of tuples in format: (last_message_hash, change in sentiment of last message, author)"""
+
+    sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1] for i in range(len(message_sentiments))[1:]]
+    messages_sentiment_change = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
+    return messages_sentiment_change
 
 
 def sentiment_api_request(message):
-	"""Make request to Azure Sentiment API with text. Returns sentiment score between 0 and 1"""
+	"""Make request to Azure Sentiment API with text. Returns normalized sentiment score (between -1 and 1)"""
 
 	# https://westus.dev.cognitive.microsoft.com/docs/services/TextAnalytics.V2.0/operations/56f30ceeeda5650db055a3c9
 	# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-	subscription_key = "0d67adf8bc524458ab03de128db96426"
+    subscription_key = "0d67adf8bc524458ab03de128db96426"
+    api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
 
-	api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
+    # Request headers
+    headers = {
+    	'Content-Type': 'application/json',
+    	'Ocp-Apim-Subscription-Key': subscription_key
+    }
 
-	# Request headers
-	headers = {
-		'Content-Type': 'application/json',
-		'Ocp-Apim-Subscription-Key': subscription_key
-	}
+    values = {"documents":
+    	[
+    		{
+    			"language": "en",
+    			"id"      : "1",
+    			"text"    : message
+    		}
+    	]
+    }
 
-	values = {"documents":
-		[
-			{
-				"language": "en",
-				"id"      : "1",
-				"text"    : message
-			}
-		]
-	}
-
-	response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
-	return json.loads(response)["documents"][0]["score"]
+    response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
+    sentiment_score = json.loads(response)["documents"][0]["score"]
+    # Normalization
+    return (sentiment_score - 0.5) * 2
 
 
 # Routing #
@@ -97,7 +113,7 @@ def sentiment_api_request(message):
 def main():
     """Default response; returns an error code."""
     return 404
-  
+
 
 @app.route("/typesense/api/new_user", methods=["POST"])
 def create_user():
@@ -161,10 +177,10 @@ def switch_conversation():
 
 	if not conversation_exists:
 
-	# Iterate through user's connections, check if any match w/ current connections
-		# If so, then conversation already exists and do shit
-		# If no, then iterate through all connections and see if any match w/ this guy
-			# If yes, then
+    	# Iterate through user's connections, check if any match w/ current connections
+    		# If so, then conversation already exists and do shit
+    		# If no, then iterate through all connections and see if any match w/ this guy
+    			# If yes, then
 
     # messages = analyze_sentiment(request.json["conversations"])
     has_account = False
