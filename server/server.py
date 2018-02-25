@@ -62,9 +62,9 @@ def analyze_sentiment(messages_list):
     messages_sentiment_impact = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
 
     # message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
-    # return dict in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
+    # return list in format: [{"Hash": {"Sentiment" : 0, "Author" : "..."}}, ...]
 
-	return {item[0]:{"Sentiment": item[1], "Author": item[2]} for item in message_sentiment_impact}
+	return [ { item[0]:{"Sentiment": item[1], "Author": item[2] } } for item in message_sentiment_impact]
 
 
 def sentiment_api_request(message):
