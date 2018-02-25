@@ -1,14 +1,12 @@
 # Globals #
 
-from bson.errors import InvalidId
-from bson.objectid import ObjectId
-from flask import Flask, jsonify, request, json, abort
-from flask_pymongo import PyMongo
-import http.client
-import urllib.request, urllib.parse, urllib.error
-import collections
 # import base64
 import hashlib
+
+import requests
+
+from flask import Flask, jsonify, request, json, abort
+from flask_pymongo import PyMongo
 
 # import utilities
 # from pprint import pprint
@@ -78,32 +76,10 @@ def check_user():
 	return jsonify({"logged_in": valid})
 
 
-def prepare_message_json(message):
-	message_json = {"documents":
-		[
-			{
-				"language": "en",
-				"id"      : "1",
-				"text"    : "{}".format(message)
-			}
-		]
-	}
-
-	print(message_json)
-	return message_json
-
-
 def analyze_sentiment(chron_message_list):
 	"""Takes a chronologically ordered list of messages in format: (author, message, timestamp)
-	and returns an ordered dictionary of message hashes and their corresponding sentiment values, scaled between -1 and 1."""
-
-	# Surprise! Actually returns a chronologically ordered list of tuples
-	#   Format: (author, message_hash, normalized_sentiment, timestamp)
-
-	# Azure sentiment analysis
-	# TODO: Remove API_keys/figure out how to store those
-	#
-	# key1: 0d67adf8bc524458ab03de128db96426
+	and returns an ordered list of tuples containing (author, message_hash, normalized_sentiment, timestamp). Normalized
+	sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
 
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
@@ -116,10 +92,8 @@ def analyze_sentiment(chron_message_list):
 		message_hash = hashlib.sha1(str.encode(text)).hexdigest()
 
 		# Get normalized sentiment (between -1.0 and 1.0) score for each message.
-		print(json.dumps(sentiment_api_request(text)))
-		# TODO: Test this
 		try:
-			sentiment_score = json.loads(sentiment_api_request(text))["documents"][0]["score"]
+			sentiment_score = sentiment_api_request(text)
 			normalized_sentiment = (sentiment_score - 0.5) * 2
 			message_sentiment_list.extend((author, message_hash, normalized_sentiment, timestamp))
 		except Exception as e:
@@ -130,37 +104,34 @@ def analyze_sentiment(chron_message_list):
 
 
 def sentiment_api_request(message):
-	"""Make request to Azure Sentiment API with conversation text."""
-
-	# API endpoint -> https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment
+	"""Make request to Azure Sentiment API with text. Returns sentiment score between 0 and 1"""
 
 	# https://westus.dev.cognitive.microsoft.com/docs/services/TextAnalytics.V2.0/operations/56f30ceeeda5650db055a3c9
 	# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
-	subscription_key = "fc250c2ad92544d983593f1595fb473a"
+	subscription_key = "0d67adf8bc524458ab03de128db96426"
+
+	api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
 
 	# Request headers
 	headers = {
 		'Content-Type': 'application/json',
-		'Ocp-Apim-Subscription-Key': '{}'.format(subscription_key),
+		'Ocp-Apim-Subscription-Key': subscription_key
 	}
 
-	params = urllib.parse.urlencode({})
+	values = {"documents":
+		[
+			{
+				"language": "en",
+				"id"      : "1",
+				"text"    : message
+			}
+		]
+	}
 
-	try:
-		conn = http.client.HTTPSConnection('westus.api.cognitive.microsoft.com')
-		request_json = prepare_message_json(message)
-		# TODO: Solve `can't concat str to bytes` JSON issue -> https://stackoverflow.com/a/45037777/8740440
-		conn.request("POST", "/text/analytics/v2.0/sentiment?%s" % params, request_json, headers)
-		response = conn.getresponse()
-		# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
-		sentiment_score = json.dumps(response.read())
-		print(message, "\t->\t", sentiment_score)
-		conn.close()
-		return sentiment_score
-	except Exception as e:
-		print("[Errno {0}] {1}".format(e.errno, e.strerror))
+	response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
+	return json.loads(response)["documents"][0]["score"]
 
 
 @app.route("/TypeSense/api/new_connection", methods=["POST"])
