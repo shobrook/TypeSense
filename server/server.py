@@ -57,21 +57,14 @@ def analyze_sentiment(messages_list):
         normalized_sentiment_impact = sentiment_api_request(message_combo)
         message_sentiments.extend((last_message_hash, normalized_sentiment_impact, author))
 
-    message_sentiment_impact = individual_message_sentiment_impact(message_sentiments)
+    # Isolate sentiment impact of each message
+    sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1] for i in range(len(message_sentiments))[1:]]
+    messages_sentiment_impact = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
 
     # message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
     # return dict in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
 
 	return {item[0]:{"Sentiment": item[1], "Author": item[2]} for item in message_sentiment_impact}
-
-
-def individual_message_sentiment_impact(message_sentiments):
-    """Takes list of tuples containing (last_message_hash, normalized_sentiment_impact, author).
-    Returns a list of tuples in format: (last_message_hash, change in sentiment of last message, author)"""
-
-    sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1] for i in range(len(message_sentiments))[1:]]
-    messages_sentiment_change = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
-    return messages_sentiment_change
 
 
 def sentiment_api_request(message):
