@@ -41,9 +41,9 @@ def analyze_sentiment(messages_list):
 	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
 
     # Add dummy values to be able to calculate the impact on sentiment of all messages
-    messages_list.insert(0, ("dummy_author0", "0", "21:00"))
-    messages_list.insert(0, ("dummy_author1", "0", "21:01"))
-    messages_list.insert(0, ("dummy_author2", "0", "21:02"))
+    messages_list.insert(0, { "author" : "dummy_author0", "message" : " " } )
+    messages_list.insert(0, { "author" : "dummy_author1", "message" : " " } )
+    messages_list.insert(0, { "author" : "dummy_author2", "message" : " " } )
 
     merged_messages = [(messages_list[i].get("message") + " " + messages_list[i+1].get("message") + " " + messages_list[i+2].get("message"), messages_list[i+2].get("author"), messages_list[i+2].get("message")) for i in range(len(messages_list))]
 
