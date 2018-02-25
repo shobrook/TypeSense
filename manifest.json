@@ -13,9 +13,11 @@
   "browser_action": {
     "default_title": "TypeSense",
     "default_icon": "extension/assets/icon.png",
-    "default_popup": "extension/content/popup.html"
+    "default_popup": "extension/templates/popup.html"
   },
-  "web_accessible_resources": [],
+  "web_accessible_resources": [
+    "https://d3js.org/d3.v4.min.js"
+  ],
   "background": {
     "scripts": ["extension/background.js"]
   },
