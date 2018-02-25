@@ -1,3 +1,13 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+
 body {
   background-color: #f8f8f8;
+  width: 320;
+  height: 400px;
+}
+
+div {
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+  font-size: 20px;
 }
