@@ -10,7 +10,7 @@ from flask_pymongo import PyMongo
 
 import collections
 import hashlib
-
+import requests
 
 DEBUG = True
 
@@ -24,16 +24,16 @@ mongo = PyMongo(app)
 """
 DATA MODEL
 Collections: users, connections, conversations
-Users: {"_id": ObjectId("..."), "fb_username": "...", "email": "...", "password": "...", "connections": [ObjectId("..."), ...]}
-Connections: {"_id": ObjectId("..."), "fb_username": "...", "has_account": False, "conversations": {ObjectId("..."): ObjectId("..."), ...}}
-Conversations: {"_id": ObjectId("..."), "messages": {"Hash": 0, ...}}
+Users: {"_id": ObjectId("..."), "fb_id": "...", "email": "...", "password": "...", "connections": [ObjectId("..."), ...]}
+Connections: {"_id": ObjectId("..."), "fb_id": "...", "conversations": {ObjectId("..."): ObjectId("..."), ...}}
+Conversations: {"_id": ObjectId("..."), "messages": [{"Hash": {"Sentiment": 0, "Author": "..."}}, ...]}
 """
 
 
 # Helpers #
 
 def analyze_sentiment(messages_list):
-	"""Takes an ordered list of dictionaries in format: { "author" : "", "message" : "" }
+	"""Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
 	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
     Normalized sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
 
@@ -108,10 +108,10 @@ def main():
     return 404
 
 
-@app.route("/typesense/api/new_user", methods=["POST"])
+@app.route("/TypeSense/api/create_user", methods=["POST"])
 def create_user():
-	"""Creates a new user document; also checks if email already exists. Payload
-	   format: {'email': '...', 'password': '...', 'fb_username': '...'}."""
+    """Creates a new user document; also checks if email already exists. Payload
+    format: {'email': '...', 'password': '...', 'fb_id': '...'}."""
     if not request.json or not "email" in request.json:
         abort(400, "new_user(): request.json does not exist or does not contain 'email'")
 
@@ -121,18 +121,18 @@ def create_user():
 
     user_id = mongo.db.users.insert({
         "email": request.json["email"],
-        "password": request.json["password"], # NOTE: Password is stored insecurely
-        "fb_username": request.json["fb_username"],
+        "password": request.json["password"],  # NOTE: Password is stored insecurely
+        "fb_id": request.json["fb_id"],
         "connections": []
     })
 
     return jsonify({"registered": True})
 
 
-@app.route("/TypeSense/api/check_user", methods=["POST"])
+@app.route("/TypeSense/api/validate_user", methods=["POST"])
 def validate_user():
-	"""Checks if login credentials are valid. Payload format: {'email': '...',
-	   'password': '...'}."""
+    """Checks if login credentials are valid. Payload format: {'email': '...',
+    'password': '...'}."""
     if not request.json or not "email" in request.json:
         abort(400, "check_user(): request.json does not exist or does not contain 'email'")
 
@@ -143,76 +143,75 @@ def validate_user():
     return jsonify({"logged_in": False})
 
 
+@app.route("/TypeSense/api/change_conversation", methods=["POST"])
+def change_conversation():
+    """Handles a conversation change. Returns sentiment scores for the new conversation's
+    most recent messages. Payload format: {'email': '...', 'fb_id': '...',
+    'messages': [{'author': True, 'message': '...'}, ...]}."""
+    if not request.json or not "fb_id" in request.json:
+        abort(400, "new_connection(): request.json does not exist or does not contain 'fb_id'")
 
-@app.route("/TypeSense/api/new_connection", methods=["POST"])
-def switch_conversation():
-	"""Handles a conversation change. Returns sentiment scores for the new conversation's
-	   most recent messages. Payload format: {'email': '...', 'fb_username': '...',
-	   'messages': [('author', 'message', 'timestamp'), ...]}."""
-    if not request.json or not "facebook_id" in request.json:
-        abort(400, "new_connection(): request.json does not exist or does not contain 'facebook_id'")
+    user = mongo.db.users.find_one({"email": request.json["email"]})
+    messages = analyze_sentiment(request.json["messages"])
 
-	# Pull current user ID
-	# Check if connection already exists
-		# If yes, then check if conversation already exists
-			# If yes, then hash messages, filter messages that are already analyzed, analyze the remaining messages, and then push analyzed messages to the conversation dict (or list, idk)
-			# If no, analyze all messages, create converstaion entry, and then append to connection's conversations
-		# If no, insert new connection and link up with the user's connections array
+    for cxn in mongo.db.connections.find():
+        # Connection exists
+        if cxn["fb_id"] == request.json["fb_id"]:
+            for user_cxn in user["connections"]:
+                # Connection already has a conversation open with user
+                connection = mongo.db.connections.find_one({"_id": ObjectId(str(user_cxn))})
+                if connection["fb_id"] == request.json["fb_id"]:
+                    conversation = mongo.db.conversations.find_one({"_id": connection["Conversations"][str(user["_id"])]})["Messages"]
 
-	user = mongo.db.users.find_one({"email": request.json["email"]})
+                    db_hashes = [message_hash for message_hash in list(conversation.keys())]
 
-	conversation_exists = False
-	for connection in user["connections"]:
-		if request.json["fb_username"] == (mongo.db.connections.find_one({"_id": connection}))["fb_username"]:
-			conversation_exists = True
-			# Hash messages, filter messages that have already been analyzed, analyze the remaining messages, and then push
-			# analyzed messages to the conversation dict (or list, idk)
+                    payload_hashes = [{hashlib.sha1(str.encode(message["message"])).hexdigest(): message["message"]} for message in request.json["messages"]]
 
-	if not conversation_exists:
+                    filtered_messages = [payload_hashes[message] for message in payload_hashes.keys() if message not in all_hashes]
 
-    	# Iterate through user's connections, check if any match w/ current connections
-    		# If so, then conversation already exists and do shit
-    		# If no, then iterate through all connections and see if any match w/ this guy
-    			# If yes, then
+                    analysis_input = [message for message in request.json["messages"] if message["message"] in filtered_messages]
+                    analyzed_messages = analyze_sentiment(analysis_input)
 
-    # messages = analyze_sentiment(request.json["conversations"])
-    has_account = False
+                    final_messages = (conversation + analyzed_messages)
+                    final_messages = final_messages[len(final_messages) - 20:]
 
-    for u in mongo.db.users.find():
-        if u["facebook_id"] == request.json["facebook_id"]:
-            has_account = True
+                    mongo.db.conversations.insert(
+                        {"_id": connection["Conversations"][str(user["_id"])]},
+                        {"messages": final_messages}
+                    )
 
-    user_id = mongo.db.users.find({"email": request.json["email"]})
-    conversation_id = mongo.db.conversations.insert({"messages": messages})
-
-    connection_exists = False
-    for c in mongo.db.connections.find():
-        if c["facebook_id"] == request.json["facebook_id"]:
-            connection_exists = True
-            connection_id = mongo.db.connections.update(
-                {"facebook_id": c["facebook_id"]},
-                {"$set": {"conversations" + ObjectId(str(user_id)): ObjectId(str(conversation_id))}}
+                    return jsonify({"messages": final_messages})
+            conversation = mongo.db.conversations.insert({"messages": messages})
+            connection = mongo.db.connections.update(
+                {"fb_id": cxn["fb_id"]},
+                {"$set": {"conversations" + str(user["_id"]): str(conversation["_id"])}}
             )
+            mongo.db.users.update({
+                {"fb_id": user["fb_id"]},
+                {"$push": {"connections": ObjectId(str(connection["_id"]))}}
+            })
 
-    if not connection_exists:
-        connection_id = mongo.db.connections.insert({
-            "facebook_id": request.json["facebook_id"],
-            "has_acccount": has_account,
-            "conversations": {str(user_id): conversation_id}
-        })
+            return jsonify({"messages": messages})
 
-    mongo.db.users.find(
-        {"email": request.json["email"]},
-        {"$push": {"connections": connection_id}}
-    )
+    # Connection doesn't exist
+    connection = mongo.db.connections.insert({
+        "fb_id": request.json["fb_id"],
+        "conversations": {str(user["_id"]): str(conversation["_id"])}
+    })
+    mongo.db.users.update({
+        {"fb_id": user["fb_id"]},
+        {"$push": {"connections": ObjectId(str(connection["_id"]))}}
+    })
 
-    return messages
+    return jsonify({"messages": messages})
 
 
 @app.route("/TypeSense/api/new_message", methods=["POST"])
 def new_message():
+    return
 
-    # Error Handling #
+
+# Error Handling #
 
 
 def error_print(status_code, error):
