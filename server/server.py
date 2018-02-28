@@ -6,6 +6,7 @@ from bson.objectid import ObjectId
 from flask import Flask, jsonify, request, json, abort
 from flask_pymongo import PyMongo
 from textblob import TextBlob
+from pprint import pprint
 import collections
 # import base64
 import hashlib
@@ -49,33 +50,50 @@ def analyze_sentiment(messages):
 	merged_messages = [(messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get(
 		"message"), messages[i + 2].get("author"), messages[i + 2].get("message")) for i in range(len(messages) - 2)]
 
-	# merged_messages = ("mess1 + mess2 + mess3", author)
+	# merged_messages = ("mess1 + mess2 + mess3", author, last_message)
 
-	print(merged_messages)
 	message_sentiments = []
 
 	for message in merged_messages:
 		message_combo, author, last_message = message[0], message[1], message[2]
-		print(message_combo)
+		print("COMBO:", message_combo)
+		print("AUTHOR:", author)
+		print("LAST_MESSAGE:", last_message)
 
-		# Encode string as bytes before hashing w/ SHA1
+		# Encode string and hash w/ SHA1
 		last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
 
 		# Get sentiment of each message combo.
-		sentiment = TextBlob(last_message).sentiment.polarity
+		sentiment = TextBlob(message_combo).sentiment.polarity
+
+		# message_sentiments = [(last_message_hash, sentiment, author), ... ]
 		message_sentiments.append((last_message_hash, sentiment, author))
 
-	# Isolate sentiment impact of each message
-	# TODO: proof this line
+	# TODO: Isolate sentiment impact of each message
+
+	# Code currently says:
+	# Impact of last message is the difference between this message combo sentiment and the last message combo sentiment
+	#
+	# But say we've got these two clusters of messages.
+	#
+	#   Cluster 1: ABC
+	#   Cluster 2: BCD
+	#
+	# The contextual sentiment score of Cluster 2 - score of Cluster 1 does not isolate the impact of D
+	# on the conversation. It includes A's impact, too.
+	#
+	# TODO: Maybe store first_message as a property and look up in a dictionary with message hashes and sentiment impacts.
+
 	sentiment_change = [message_sentiments[i][1] - message_sentiments[i - 1][1] for i in range(len(message_sentiments))]
 
-	print("Change in sentiment due to last message", sentiment_change)
+	print("Change in sentiment due to last message")
+	pprint(sentiment_change)
 
 	list1 = [x[0] for x in message_sentiments]      # last_message hash
 	list2 = [x for x in sentiment_change]           # sentiment change caused by last message
 	list3 = [x[2] for x in message_sentiments]      # author
 
-	# sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
+	# sentiment_impact: [(last_message_hash, change in sentiment of last message, author), ...]
 	sentiment_impact = zip(list1, list2, list3)
 
 	# return list of nested dicts: [{"Hash": {"Sentiment" : 0, "Author" : "a"}}, ... ]
