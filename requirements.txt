@@ -1,2 +1,3 @@
+textblob
 requests
 Flask==0.12.2
