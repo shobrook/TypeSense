@@ -32,46 +32,54 @@ Conversations: {"_id": ObjectId("..."), "messages": [{"Hash": {"Sentiment": 0, "
 
 def analyze_sentiment(messages):
 	"""Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
-	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
-    Normalized sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
+	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}. Sentiment between -1 and 1."""
 
 	# https://pypi.python.org/pypi/textblob
+
+	print("ANALYZE SENTIMENT")
 
 	# Add dummy values to be able to calculate the impact on sentiment of all messages
 	messages.insert(0, {"author": "dummy_author0", "message": "a "})
 	messages.insert(0, {"author": "dummy_author1", "message": "b "})
 	messages.insert(0, {"author": "dummy_author2", "message": "c "})
 
+	# TODO: Write new sentiment isolation formula/figure out a way to get the sentiment change of the last message
+	# TODO:     sent. I don't think this formula can be leveraged to do that as is.
+
 	merged_messages = [(messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get(
 		"message"), messages[i + 2].get("author"), messages[i + 2].get("message")) for i in range(len(messages) - 2)]
 
-	# print(merged_messages)
+	# merged_messages = ("mess1 + mess2 + mess3", author)
+
+	print(merged_messages)
 	message_sentiments = []
 
 	for message in merged_messages:
 		message_combo, author, last_message = message[0], message[1], message[2]
 		print(message_combo)
+
 		# Encode string as bytes before hashing w/ SHA1
 		last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
 
-		# Get normalized sentiment (between -1.0 and 1.0) score for each message combo.
-		normalized_sentiment_impact = TextBlob(last_message).sentiment.polarity
-		message_sentiments.append((last_message_hash, normalized_sentiment_impact, author))
+		# Get sentiment of each message combo.
+		sentiment = TextBlob(last_message).sentiment.polarity
+		message_sentiments.append((last_message_hash, sentiment, author))
 
 	# Isolate sentiment impact of each message
-	print("MESS_SE", message_sentiments)
-	sentiment_change = [message_sentiments[i][1] - message_sentiments[i - 1][1] for i in
-	                    range(len(message_sentiments))[1:]]
+	# TODO: proof this line
+	sentiment_change = [message_sentiments[i][1] - message_sentiments[i - 1][1] for i in range(len(message_sentiments))]
 
-	list1 = [x[1] for x in message_sentiments]
-	list2 = [x[0] for x in message_sentiments]
-	list3 = [x[2] for x in message_sentiments]
+	print("Change in sentiment due to last message", sentiment_change)
 
-	message_sentiment_impact = zip(list2, list1, list3)
-	# message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
-	# return list in format: [{"Hash": {"Sentiment" : 0, "Author" : "..."}}, ...]
+	list1 = [x[0] for x in message_sentiments]      # last_message hash
+	list2 = [x for x in sentiment_change]           # sentiment change caused by last message
+	list3 = [x[2] for x in message_sentiments]      # author
 
-	return [{item[0]: {"Sentiment": item[1], "Author": item[2]}} for item in message_sentiment_impact]
+	# sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
+	sentiment_impact = zip(list1, list2, list3)
+
+	# return list of nested dicts: [{"Hash": {"Sentiment" : 0, "Author" : "a"}}, ... ]
+	return [{element[0]: {"Sentiment": element[1], "Author": element[2]}} for element in sentiment_impact]
 
 
 # Routing #
