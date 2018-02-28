@@ -5,14 +5,11 @@ from bson.errors import InvalidId
 from bson.objectid import ObjectId
 from flask import Flask, jsonify, request, json, abort
 from flask_pymongo import PyMongo
-import http.client
-import urllib.request
-import urllib.parse
-import urllib.error
+from textblob import TextBlob
+from pprint import pprint
 import collections
 # import base64
 import hashlib
-import requests
 
 DEBUG = True
 
@@ -34,81 +31,73 @@ Conversations: {"_id": ObjectId("..."), "messages": [{"Hash": {"Sentiment": 0, "
 
 # Helpers #
 
-
-def sentiment_api_request(message):
-	"""Make request to Azure Sentiment API with text. Returns normalized sentiment score (between -1 and 1)"""
-
-	# https://westus.dev.cognitive.microsoft.com/docs/services/TextAnalytics.V2.0/operations/56f30ceeeda5650db055a3c9
-	# https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis
-	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
-
-	subscription_key = "0d67adf8bc524458ab03de128db96426"
-	api_endpoint = 'https://westcentralus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment'
-
-    # Request headers
-	headers = {
-    	'Content-Type': 'application/json',
-    	'Ocp-Apim-Subscription-Key': subscription_key
-    }
-
-	values = {"documents":
-    	[
-    		{
-    			"language": "en",
-    			"id"      : "1",
-    			"text"    : message
-    		}
-    	]
-    }
-
-	response = requests.post(api_endpoint, data=json.dumps(values), headers=headers).text
-	#print(response)
-	sentiment_score = json.loads(response)["documents"][0]["score"]
-	# Normalization
-	return (sentiment_score - 0.5) * 2
-
-
-def analyze_sentiment(messages_list):
+def analyze_sentiment(messages):
 	"""Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
-	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}
-    Normalized sentiment values scaled between -1 and 1. Uses Azure sentiment analysis API."""
+	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}. Sentiment between -1 and 1."""
 
-	# https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/cognitive-services/text-analytics/how-tos/text-analytics-how-to-sentiment-analysis.md
+	# https://pypi.python.org/pypi/textblob
 
-    # Add dummy values to be able to calculate the impact on sentiment of all messages
-	messages_list.insert(0, {"author": "dummy_author0", "message": "a "})
-	messages_list.insert(0, {"author": "dummy_author1", "message": "b "})
-	messages_list.insert(0, {"author": "dummy_author2", "message": "c "})
+	print("ANALYZE SENTIMENT")
 
-	merged_messages = [(messages_list[i].get("message") + " " + messages_list[i+1].get("message") + " " + messages_list[i+2].get(
-	    "message"), messages_list[i+2].get("author"), messages_list[i+2].get("message")) for i in range(len(messages_list) - 2)]
+	# Add dummy values to be able to calculate the impact on sentiment of all messages
+	messages.insert(0, {"author": "dummy_author0", "message": "a "})
+	messages.insert(0, {"author": "dummy_author1", "message": "b "})
+	messages.insert(0, {"author": "dummy_author2", "message": "c "})
 
-	#print(merged_messages)
+	# TODO: Write new sentiment isolation formula/figure out a way to get the sentiment change of the last message
+	# TODO:     sent. I don't think this formula can be leveraged to do that as is.
+
+	merged_messages = [(messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get(
+		"message"), messages[i + 2].get("author"), messages[i + 2].get("message")) for i in range(len(messages) - 2)]
+
+	# merged_messages = ("mess1 + mess2 + mess3", author, last_message)
+
 	message_sentiments = []
 
 	for message in merged_messages:
 		message_combo, author, last_message = message[0], message[1], message[2]
-		print(message_combo)
-		# Encode string as bytes before hashing w/ SHA1
+		print("COMBO:", message_combo)
+		print("AUTHOR:", author)
+		print("LAST_MESSAGE:", last_message)
+
+		# Encode string and hash w/ SHA1
 		last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
 
-		# Get normalized sentiment (between -1.0 and 1.0) score for each message combo.
-		normalized_sentiment_impact = sentiment_api_request(message_combo)
-		message_sentiments.append((last_message_hash, normalized_sentiment_impact, author))
+		# Get sentiment of each message combo.
+		sentiment = TextBlob(message_combo).sentiment.polarity
 
-	# Isolate sentiment impact of each message
-	print("MESS_SE", message_sentiments)
-	sentiment_change = [message_sentiments[i][1] - message_sentiments[i-1][1] for i in range(len(message_sentiments))[1:]]
+		# message_sentiments = [(last_message_hash, sentiment, author), ... ]
+		message_sentiments.append((last_message_hash, sentiment, author))
 
-	list1 = [x[1] for x in message_sentiments]
-	list2 = [x[0] for x in message_sentiments]
-	list3 = [x[2] for x in message_sentiments]
-	# message_sentiment_impact = zip(message_sentiments[0], sentiment_change, message_sentiments[2])
-	message_sentiment_impact = zip(list2, list1, list3)
-    # message_sentiment_impact in format: [(last_message_hash, change in sentiment of last message, author), ...]
-    # return list in format: [{"Hash": {"Sentiment" : 0, "Author" : "..."}}, ...]
+	# TODO: Isolate sentiment impact of each message
 
-	return [{item[0]:{"Sentiment": item[1], "Author": item[2]}} for item in message_sentiment_impact]
+	# Code currently says:
+	# Impact of last message is the difference between this message combo sentiment and the last message combo sentiment
+	#
+	# But say we've got these two clusters of messages.
+	#
+	#   Cluster 1: ABC
+	#   Cluster 2: BCD
+	#
+	# The contextual sentiment score of Cluster 2 - score of Cluster 1 does not isolate the impact of D
+	# on the conversation. It includes A's impact, too.
+	#
+	# TODO: Maybe store first_message as a property and look up in a dictionary with message hashes and sentiment impacts.
+
+	sentiment_change = [message_sentiments[i][1] - message_sentiments[i - 1][1] for i in range(len(message_sentiments))]
+
+	print("Change in sentiment due to last message")
+	pprint(sentiment_change)
+
+	list1 = [x[0] for x in message_sentiments]      # last_message hash
+	list2 = [x for x in sentiment_change]           # sentiment change caused by last message
+	list3 = [x[2] for x in message_sentiments]      # author
+
+	# sentiment_impact: [(last_message_hash, change in sentiment of last message, author), ...]
+	sentiment_impact = zip(list1, list2, list3)
+
+	# return list of nested dicts: [{"Hash": {"Sentiment" : 0, "Author" : "a"}}, ... ]
+	return [{element[0]: {"Sentiment": element[1], "Author": element[2]}} for element in sentiment_impact]
 
 
 # Routing #
@@ -116,43 +105,43 @@ def analyze_sentiment(messages_list):
 
 @app.route("/")
 def main():
-    """Default response; returns an error code."""
-    return 404
+	"""Default response; returns an error code."""
+	return 404
 
 
 @app.route("/TypeSense/api/create_user", methods=["POST"])
 def create_user():
-    """Creates a new user document; also checks if email already exists. Payload
+	"""Creates a new user document; also checks if email already exists. Payload
     format: {'email': '...', 'password': '...', 'fb_id': '...'}."""
-    if not request.json or not "email" in request.json:
-        abort(400, "new_user(): request.json does not exist or does not contain 'email'")
+	if not request.json or not "email" in request.json:
+		abort(400, "new_user(): request.json does not exist or does not contain 'email'")
 
-    for user in mongo.db.users.find():
-        if user["email"] == request.json["email"]:
-            return jsonify({"registered": False})
+	for user in mongo.db.users.find():
+		if user["email"] == request.json["email"]:
+			return jsonify({"registered": False})
 
-    user_id = mongo.db.users.insert({
-        "email": request.json["email"],
-        "password": request.json["password"],  # NOTE: Password is stored insecurely
-        "fb_id": request.json["fb_id"],
-        "connections": []
-    })
+	user_id = mongo.db.users.insert({
+		"email"      : request.json["email"],
+		"password"   : request.json["password"],  # NOTE: Password is stored insecurely
+		"fb_id"      : request.json["fb_id"],
+		"connections": []
+	})
 
-    return jsonify({"registered": True})
+	return jsonify({"registered": True})
 
 
 @app.route("/TypeSense/api/validate_user", methods=["POST"])
 def validate_user():
-    """Checks if login credentials are valid. Payload format: {'email': '...',
+	"""Checks if login credentials are valid. Payload format: {'email': '...',
     'password': '...'}."""
-    if not request.json or not "email" in request.json:
-        abort(400, "check_user(): request.json does not exist or does not contain 'email'")
+	if not request.json or not "email" in request.json:
+		abort(400, "check_user(): request.json does not exist or does not contain 'email'")
 
-    for user in mongo.db.users.find():
-        if user["email"] == request.json["email"] and u["password"] == request.json["password"]:
-            return jsonify({"logged_in": True})
+	for user in mongo.db.users.find():
+		if user["email"] == request.json["email"] and u["password"] == request.json["password"]:
+			return jsonify({"logged_in": True})
 
-    return jsonify({"logged_in": False})
+	return jsonify({"logged_in": False})
 
 
 @app.route("/TypeSense/api/change_conversation", methods=["POST"])
@@ -169,95 +158,100 @@ def change_conversation():
 	print(messages)
 
 	for cxn in mongo.db.connections.find():
-        # Connection exists
+		# Connection exists
 		if cxn["fb_id"] == request.json["fb_id"]:
 			for user_cxn in user["connections"]:
 				# Connection already has a conversation open with user
 				connection = mongo.db.connections.find_one({"_id": ObjectId(str(user_cxn))})
 				if connection["fb_id"] == request.json["fb_id"]:
-					conversation = mongo.db.conversations.find_one({"_id": connection["Conversations"][str(user["_id"])]})["Messages"]
+					conversation = \
+						mongo.db.conversations.find_one({"_id": connection["Conversations"][str(user["_id"])]})[
+							"Messages"]
 
 					db_hashes = [message_hash for message_hash in list(conversation.keys())]
 
-					payload_hashes = [{hashlib.sha1(str.encode(message["message"])).hexdigest(): message["message"]} for message in request.json["messages"]]
+					payload_hashes = [{hashlib.sha1(str.encode(message["message"])).hexdigest(): message["message"]} for
+					                  message in request.json["messages"]]
 
-					filtered_messages = [payload_hashes[message] for message in payload_hashes.keys() if message not in all_hashes]
+					filtered_messages = [payload_hashes[message] for message in payload_hashes.keys() if
+					                     message not in all_hashes]
 
-					analysis_input = [message for message in request.json["messages"] if message["message"] in filtered_messages]
+					analysis_input = [message for message in request.json["messages"] if
+					                  message["message"] in filtered_messages]
 					analyzed_messages = analyze_sentiment(analysis_input)
 
 					final_messages = (conversation + analyzed_messages)
 					final_messages = final_messages[len(final_messages) - 20:]
 
 					mongo.db.conversations.insert(
-                        {"_id": connection["Conversations"][str(user["_id"])]},
-                        {"messages": final_messages}
-                    )
+						{"_id": connection["Conversations"][str(user["_id"])]},
+						{"messages": final_messages}
+					)
 
 					return jsonify({"messages": final_messages})
 			conversation = mongo.db.conversations.insert({"messages": messages})
 			connect_update = mongo.db.connections.update(
-                {"fb_id": cxn["fb_id"]},
-                {"$set": {"conversations." + str(user["_id"]): ObjectId(str(conversation))}}
-            )
+				{"fb_id": cxn["fb_id"]},
+				{"$set": {"conversations." + str(user["_id"]): ObjectId(str(conversation))}}
+			)
 			connection = mongo.db.connections.find_one({"fb_id": cxn["fb_id"]})
 			print(connection["_id"])
 			user_update = mongo.db.users.update({
-                {"fb_id": user["fb_id"]},
-                {"$push": {"connections": connection["_id"]}}
-            })
+				{"fb_id": user["fb_id"]},
+				{"$push": {"connections": connection["_id"]}}
+			})
 
 			return jsonify({"messages": messages})
 
-    # Connection doesn't exist
+		# Connection doesn't exist
 	conversation = mongo.db.conversations.insert({"messages": messages})
 	print(user)
 	print(conversation)
 	connection = mongo.db.connections.insert({
-        "fb_id": request.json["fb_id"],
-        "conversations": {str(user["_id"]): ObjectId(str(conversation))}
-    })
+		"fb_id"        : request.json["fb_id"],
+		"conversations": {str(user["_id"]): ObjectId(str(conversation))}
+	})
 	print(connection)
 	mongo.db.users.update({
-        {"fb_id": user["fb_id"]},
-        {"$push": {"connections": ObjectId(str(connection))}}
-    })
+		{"fb_id": user["fb_id"]},
+		{"$push": {"connections": ObjectId(str(connection))}}
+	})
 
 	return jsonify({"messages": messages})
 
 
 @app.route("/TypeSense/api/new_message", methods=["POST"])
 def new_message():
-    return
+	return
 
 
 # Error Handling #
 
 
 def error_print(status_code, error):
-    if DEBUG:
-        print("------------")
-        print("ERROR (" + str(status_code) + "): " + error)
-        print("------------")
+	if DEBUG:
+		print("------------")
+		print("ERROR (" + str(status_code) + "): " + error)
+		print("------------")
 
 
 @app.errorhandler(400)
 def bad_request(error):
-    error_print(400, error.description)
-    return "Bad Request", 400
+	error_print(400, error.description)
+	return "Bad Request", 400
 
 
 @app.errorhandler(401)
 def bad_request(error):
-    error_print(401, error.description)
-    return "Unauthorized", 401
+	error_print(401, error.description)
+	return "Unauthorized", 401
 
 
 @app.errorhandler(500)
 def internal_error(error):
-    error_print(500, error.description)
-    return "Internal Error", 500
+	error_print(500, error.description)
+	return "Internal Error", 500
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+	app.run(debug=True)
