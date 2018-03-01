@@ -23,17 +23,20 @@ mongo = PyMongo(app)
 """
 DATA MODEL
 Collections: users, connections, conversations
-Users: {"_id": ObjectId("..."), "fb_id": "...", "email": "...", "password": "...", "connections": [ObjectId("..."), ...]}
-Connections: {"_id": ObjectId("..."), "fb_id": "...", "conversations": {ObjectId("..."): ObjectId("..."), ...}}
-Conversations: {"_id": ObjectId("..."), "messages": [{"Hash": {"Sentiment": 0, "Author": "..."}}, ...]}
+Users: {"_id": ObjectId(), "fb_id": int(), "email": str(), "password": str(), "connections": [ObjectId(), ...]}
+Connections: {"_id": ObjectId(), "fb_id": str(), "conversations": [{"user_id": ObjectId(), "conversation_id": ObjectId()}, ...]}
+Conversations: {"_id": ObjectId(), "messages": [{"hash": str(), "sentiment": int(), "author": bool()}, ...]}
 """
 
 
 # Helpers #
 
+
 def analyze_sentiment(messages):
 	"""Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
 	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}. Sentiment between -1 and 1."""
+
+	# TODO: Change output format to: [{"hash": str(), "sentiment": int(), "author": bool()}, ...]
 
 	# https://pypi.python.org/pypi/textblob
 
@@ -112,7 +115,7 @@ def main():
 @app.route("/TypeSense/api/create_user", methods=["POST"])
 def create_user():
 	"""Creates a new user document; also checks if email already exists. Payload
-    format: {'email': '...', 'password': '...', 'fb_id': '...'}."""
+    format: {'email': str(), 'password': str(), 'fb_id': int()}."""
 	if not request.json or not "email" in request.json:
 		abort(400, "new_user(): request.json does not exist or does not contain 'email'")
 
@@ -132,8 +135,8 @@ def create_user():
 
 @app.route("/TypeSense/api/validate_user", methods=["POST"])
 def validate_user():
-	"""Checks if login credentials are valid. Payload format: {'email': '...',
-    'password': '...'}."""
+	"""Checks if login credentials are valid. Payload format: {'email': str(),
+    'password': str()}."""
 	if not request.json or not "email" in request.json:
 		abort(400, "check_user(): request.json does not exist or does not contain 'email'")
 
@@ -144,85 +147,72 @@ def validate_user():
 	return jsonify({"logged_in": False})
 
 
-@app.route("/TypeSense/api/change_conversation", methods=["POST"])
-def change_conversation():
-	"""Handles a conversation change. Returns sentiment scores for the new conversation's
-	most recent messages. Payload format: {'email': '...', 'fb_id': '...',
-	'messages': [{'author': True, 'message': '...'}, ...]}."""
+@app.route("/TypeSense/api/update_conversation", methods=["POST"])
+def update_conversation():
+	"""Handles new conversations and conversation updates (new messages). Returns sentiment scores
+	for the new conversation's most recent messages. Payload format: {'email': str(), 'fb_id': int(),
+	'messages': [{'author': bool(), 'message': str()}, ...]}."""
 	if not request.json or not "fb_id" in request.json:
 		abort(400, "new_connection(): request.json does not exist or does not contain 'fb_id'")
 
 	user = mongo.db.users.find_one({"email": request.json["email"]})
-	messages = analyze_sentiment(request.json["messages"])
-
-	print(messages)
 
 	for cxn in mongo.db.connections.find():
-		# Connection exists
+		# Connection already exists
 		if cxn["fb_id"] == request.json["fb_id"]:
 			for user_cxn in user["connections"]:
-				# Connection already has a conversation open with user
+				# Connection has a conversation open with user (memoization)
 				connection = mongo.db.connections.find_one({"_id": ObjectId(str(user_cxn))})
 				if connection["fb_id"] == request.json["fb_id"]:
-					conversation = \
-						mongo.db.conversations.find_one({"_id": connection["Conversations"][str(user["_id"])]})[
-							"Messages"]
+					conversation = (mongo.db.conversations.find_one({"_id": connection["conversations"][str(user["_id"])]}))["messages"]
 
-					db_hashes = [message_hash for message_hash in list(conversation.keys())]
+					db_hashes = [msg["hash"] for msg in conversation]
+					payload_hashes  = [{hashlib.sha1(str.encode(msg["message"])).hexdigest(): msg["message"]} for msg in request.json["messages"]]
 
-					payload_hashes = [{hashlib.sha1(str.encode(message["message"])).hexdigest(): message["message"]} for
-					                  message in request.json["messages"]]
-
-					filtered_messages = [payload_hashes[message] for message in payload_hashes.keys() if
-					                     message not in all_hashes]
-
-					analysis_input = [message for message in request.json["messages"] if
-					                  message["message"] in filtered_messages]
+					target_messages = [payload_hashes[msg] for msg in payload_hashes.keys() if msg not in db_hashes]
+					analysis_input = [msg for msg in request.json["messages"] if msg["message"] in target_messages]
 					analyzed_messages = analyze_sentiment(analysis_input)
 
-					final_messages = (conversation + analyzed_messages)
-					final_messages = final_messages[len(final_messages) - 20:]
+					updated_messages = (conversation + analyzed_messages)
+					updated_messages = updated_messages[len(updated_messages) - 20:]
 
 					mongo.db.conversations.insert(
-						{"_id": connection["Conversations"][str(user["_id"])]},
-						{"messages": final_messages}
+						{"_id": connection["conversations"][str(user["_id"])]},
+						{"messages": updated_messages}
 					)
 
-					return jsonify({"messages": final_messages})
+					# NOTE: analysis_input does not include past messages for context
+
+					return jsonify({"messages": updated_messages})
+			# User's first conversation with connection
+			messages = analyze_sentiment(request.json["messages"])
 			conversation = mongo.db.conversations.insert({"messages": messages})
-			connect_update = mongo.db.connections.update(
+			mongo.db.connections.update(
 				{"fb_id": cxn["fb_id"]},
-				{"$set": {"conversations." + str(user["_id"]): ObjectId(str(conversation))}}
+				{"$push": {"conversations": {"user_id": ObjectId(str(user["_id"])), "conversation_id": ObjectId(str(conversation))}}}
 			)
 			connection = mongo.db.connections.find_one({"fb_id": cxn["fb_id"]})
-			print(connection["_id"])
-			user_update = mongo.db.users.update({
+			user_update = mongo.db.users.update(
 				{"fb_id": user["fb_id"]},
-				{"$push": {"connections": connection["_id"]}}
-			})
+				{"$push": {"connections": ObjectId(str(connection["_id"]))}}
+			)
 
 			return jsonify({"messages": messages})
 
-		# Connection doesn't exist
+	# Connection doesn't exist
+	messages = analyze_sentiment(request.json["messages"])
 	conversation = mongo.db.conversations.insert({"messages": messages})
-	print(user)
-	print(conversation)
 	connection = mongo.db.connections.insert({
-		"fb_id"        : request.json["fb_id"],
-		"conversations": {str(user["_id"]): ObjectId(str(conversation))}
+		"fb_id": request.json["fb_id"],
+		"conversations": [{"user_id": ObjectId(str(user["_id"])), "conversation_id": ObjectId(str(conversation))}]
 	})
 	print(connection)
-	mongo.db.users.update({
+	mongo.db.users.update(
 		{"fb_id": user["fb_id"]},
 		{"$push": {"connections": ObjectId(str(connection))}}
-	})
+	)
 
 	return jsonify({"messages": messages})
-
-
-@app.route("/TypeSense/api/new_message", methods=["POST"])
-def new_message():
-	return
 
 
 # Error Handling #
