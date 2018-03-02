@@ -23,6 +23,23 @@ TypeSense is a Chrome extension that tracks the sentiment of Facebook Messenger 
 7. Go to www.messenger.com and click the TypeSense button
 
 
+#### How to Contribute
+---
+
+1. Clone the repo
+2. Create a new branch: `$ git checkout https://github.com/shobrook/TypeSense -b [name_for_new_branch]`.
+3. Make changes and test
+5. Pull Request with comprehensive description of changes
+
+
+#### Made By
+---
+
++ Aaron Lichtman
++ Adam Gernes
++ Jonathan Shobrook
++ Rishi Masand
+
 #### License
 ---
 
