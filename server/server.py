@@ -1,13 +1,12 @@
 # Globals #
 
 
-from bson.errors import InvalidId
+# from bson.errors import InvalidId
 from bson.objectid import ObjectId
-from flask import Flask, jsonify, request, json, abort
+from flask import Flask, jsonify, request, abort
 from flask_pymongo import PyMongo
 from textblob import TextBlob
 from pprint import pprint
-import collections
 import hashlib
 
 DEBUG = True
@@ -31,9 +30,11 @@ Conversations: {"_id": ObjectId(), "messages": [{"hash": str(), "sentiment": int
 # Helpers #
 
 
-def analyze_sentiment(messages):
+def analyze_sentiment(messages, conversation):
 	"""Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
-	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}. Sentiment between -1 and 1."""
+	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}. Sentiment between -1 and 1.
+	:param messages:
+	:param conversation: """
 
 	# https://pypi.python.org/pypi/textblob
 
@@ -65,13 +66,21 @@ def analyze_sentiment(messages):
 
 		# Hash last message w/ SHA1
 		last_message_hash = hashlib.sha1(str.encode(last_message)).hexdigest()
+		filtered_message = [msg for msg in conversation if msg["hash"] == last_message_hash]
 
-		# Get sentiment of each message combo.
-		four_msg_sentiment = TextBlob(four_msg_combo).sentiment.polarity
-		three_msg_sentiment = TextBlob(three_msg_combo).sentiment.polarity
+		# Memoization.
+		# If sent analysis needed
+		if not filtered_message:
+			# Get sentiment of each message combo.
+			four_msg_sentiment = TextBlob(four_msg_combo).sentiment.polarity
+			three_msg_sentiment = TextBlob(three_msg_combo).sentiment.polarity
 
-		# message_sentiments = [(last_message_hash, sentiment, author), ... ]
-		message_sentiments.append((last_message_hash, four_msg_sentiment - three_msg_sentiment, author))
+			# message_sentiments = [(last_message_hash, sentiment, author), ... ]
+			message_sentiments.append((last_message_hash, four_msg_sentiment - three_msg_sentiment, author))
+
+		# Sentiment analysis not needed. Lookup in db
+		else:
+			message_sentiments.append((last_message_hash, filtered_message[0]["sentiment"], author))
 
 	print("Change in sentiment due to last message")
 	pprint(message_sentiments)
@@ -100,7 +109,7 @@ def create_user():
 		if user["email"] == request.json["email"]:
 			return jsonify({"registered": False})
 
-	user_id = mongo.db.users.insert({
+	mongo.db.users.insert({
 		"email"      : request.json["email"],
 		"password"   : request.json["password"],  # NOTE: Password is stored insecurely
 		"fb_id"      : request.json["fb_id"],
@@ -118,7 +127,7 @@ def validate_user():
 		abort(400, "check_user(): request.json does not exist or does not contain 'email'")
 
 	for user in mongo.db.users.find():
-		if user["email"] == request.json["email"] and u["password"] == request.json["password"]:
+		if user["email"] == request.json["email"] and user["password"] == request.json["password"]:
 			return jsonify({"logged_in": True})
 
 	return jsonify({"logged_in": False})
@@ -142,32 +151,20 @@ def update_conversation():
 				connection = mongo.db.connections.find_one({"_id": ObjectId(str(user_cxn))})
 				if connection["fb_id"] == request.json["fb_id"]:
 					conversation = (mongo.db.conversations.find_one({"_id": connection["conversations"][str(user["_id"])]}))["messages"]
-
-					# Slice off the last 3 messages that have not been processed yet
-					db_messages = [msg["message"] for msg in conversation][-3:]
-					db_hashes = [msg["hash"] for msg in conversation]
-					payload_hashes = [{hashlib.sha1(str.encode(msg["message"])).hexdigest(): msg["message"]} for msg in request.json["messages"]]
-
-					target_messages = [payload_hashes[msg] for msg in payload_hashes.keys() if msg not in db_hashes]
-					analysis_input = [msg for msg in request.json["messages"] if msg["message"] in target_messages]
-					analyzed_messages = analyze_sentiment(analysis_input)
-
-					updated_messages = (conversation + analyzed_messages)
-					# Cut messages down to the last 20
-					updated_messages = updated_messages[len(updated_messages) - 20:]
+					analyzed_messages = analyze_sentiment(request.json["messages"], conversation)
 
 					# Overwrite previous conversation with updated conversation
 					mongo.db.conversations.insert(
 						{"_id": connection["conversations"][str(user["_id"])]},
-						{"messages": updated_messages}
+						{"messages": analyzed_messages}
 					)
 
-					# ISSUE: analysis_input does not include past messages for context
-
-					return jsonify({"messages": updated_messages})
+					return jsonify({"messages": analyzed_messages})
 
 			# User's first conversation with connection
-			messages = analyze_sentiment(request.json["messages"])
+
+			# Pass in empty list because we're not always going to memoize
+			messages = analyze_sentiment(request.json["messages"], [])
 			conversation = mongo.db.conversations.insert({"messages": messages})
 			mongo.db.connections.update(
 				{"fb_id": cxn["fb_id"]},
@@ -184,7 +181,9 @@ def update_conversation():
 			return jsonify({"messages": messages})
 
 	# Connection doesn't exist
-	messages = analyze_sentiment(request.json["messages"])
+
+	# Pass in empty list because we're not always going to memoize
+	messages = analyze_sentiment(request.json["messages"], [])
 	conversation = mongo.db.conversations.insert({"messages": messages})
 	connection = mongo.db.connections.insert({
 		"fb_id": request.json["fb_id"],
