@@ -47,13 +47,9 @@ def analyze_sentiment(messages, conversation):
 	#
 	# Cluster 1 - Cluster 2 isolates the impact of D, in context
 
-	trips_of_messages = [messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get(
-		"message") for i in range(len(messages) - 2)]
+	trips_of_messages = [messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get("message") for i in range(len(messages) - 2)]
 
-	quads_of_messages = [
-		(messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get("message" + " "
-			+ messages[i + 3].get("message")), messages[i + 3].get("author"), messages[i + 3].get("message")) for i in
-		range(len(messages) - 3)]
+	quads_of_messages = [(messages[i]["message"] + " " + messages[i + 1]["message"] + " " + messages[i + 2]["message"] + " " + messages[i + 3]["message"], messages[i + 3]["author"], messages[i + 3]["message"]) for i in range(len(messages) - 3)]
 
 	message_sentiments = []
 
