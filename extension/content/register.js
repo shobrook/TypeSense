@@ -41,7 +41,7 @@ var registerPayload = function() {
 							          <img id="greenPassCheckMark" class="passCheckMark" src="https://image.ibb.co/gOdafF/Password_Check_GREEN.png" style="display: none;">
 							          <input id="signUpButton" class="signUpLoginButton" type="submit" value="Get Started">
 							          <div id="passwordHelpText">
-							            <p>Passwords must be at least 6 characters long.</p>
+							            <p>Passwords must be at least 10 characters long.</p>
 							          </div><!--passwordHelpText-->
 							        </form><!--signUpForm-->
 							      </div><!--signUpTabContent-->
@@ -279,9 +279,9 @@ var registerPayload = function() {
 
 	var exitButton = document.getElementById("registerExit");
 
-	// Changes grey checkmark to green when user types a password >= 6 characters
+	// Changes grey checkmark to green when user types a password >= 10 characters
 	passwordField.onkeyup = function() {
-  	if (((this).value).length >= 6) {
+  	if (((this).value).length >= 10) {
     	greyPassCheckMark.style.display = "none";
     	greenPassCheckMark.style.display = "initial";
   	} else {
@@ -337,7 +337,7 @@ var registerPayload = function() {
 		var email = (this).tabberEmail.value;
 		var password = (this).tabberPass.value;
 
-		if (password.length < 6) {
+		if (password.length < 10) {
 			console.log("User's password is too short.");
 			passwordHelpText.style.color = "#EC3D3D";
 			(this).tabberPass.value = "";
