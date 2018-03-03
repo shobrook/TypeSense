@@ -46,7 +46,6 @@ storage.set({"signup": true}, function() {
 /* Main */
 
 
-//
 // Prompts the sign-up dialog on "first-install"; provides handler for extension updates
 // QUESTION: Is a listener for a "first-load" of messenger.com needed? The "onInstalled" event
 // probably fires before a user visits messenger
@@ -66,6 +65,8 @@ chrome.runtime.onInstalled.addListener(function(details) {
 	}
 });
 
+// TODO: Add listener for when messenger.com is loaded, send listeners.js the "inject-listeners" event if !signup
+
 // Listens for the browser action to be clicked
 chrome.browserAction.onClicked.addListener(function(tab) {
 	storage.get("signup", function(signup) {
@@ -73,17 +74,6 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 				var activeTab = tabs[0];
 				chrome.tabs.sendMessage(activeTab.id, {"message": "prompt-signup"});
-			});
-		} else { // If user has signed up or logged in, prompt the select messages canvas
-			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-				var saveDialog = function(folders) {
-					var activeTab = tabs[0];
-					chrome.tabs.sendMessage(activeTab.id, {"message": "clicked-browser-action", "folders": JSON.parse(folders).folders});
-					console.log("Passed folder references to save dialog.");
-				}
-				storage.get("credentials", function(creds) {
-					POST(GET_FOLDERS, {"email": creds["credentials"]["email"]}, saveDialog); // Pass user's folder references to the save dialog
-				});
 			});
 		}
 	});
@@ -100,10 +90,11 @@ var hashSaltPassword = function(email, password) {
 // Listens for long-lived port connections (from content scripts)
 chrome.runtime.onConnect.addListener(function(port) {
 	port.onMessage.addListener(function(msg) {
-		if (port.name == "register") { // Handles requests from the "register" port
+		if (port.name == "register") { // Handles requests from the "register" port (registration.js)
 			var addUser = function(user) {
-				if (JSON.parse(user).registered) {
+				if (JSON.parse(user).registered) { // Successful registration
 					console.log("Email is valid. Registering user.");
+
 					storage.set({"credentials": {"email": msg.email, "password": msg.password}}, function() {
 						port.postMessage({type: "registered", value: true});
 						storage.set({"onboarding": true}, function() {
@@ -112,21 +103,28 @@ chrome.runtime.onConnect.addListener(function(port) {
 						storage.set({"signup": false}, function() {
 							console.log("Signup set to false.");
 						});
+
+						// Tells onboarding.js to prompt the onboarding dialog
 						chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 							var activeTab = tabs[0];
 							chrome.tabs.sendMessage(activeTab.id, {"message": "first-signup"});
 						});
 					});
-				} else if (!(JSON.parse(user).registered)) {
+
+					// Tells listeners.js to inject event listeners
+					chrome.tabs.query({active: true, currentWindow: true, function(tabs) {
+						var activeTab = tabs[0];
+						chrome.tabs.sendMessage(activeTab.id, {"message": "inject-listeners"});
+					}});
+				} else { // Unsuccessful registration
 					console.log("Email is already in use. Try again.");
 					port.postMessage({type: "registered", value: false});
 				}
 			}
-			var pw_hash = hashedSaltedPass(msg.email, msg.password)
-			POST(CREATE_USER, {"email": msg.email, "password": pw_hash}, addUser);
-		} else if (port.name == "login") { // Handles requests from the "login" port
-			var updateUser = function(user) {
-				if (JSON.parse(user).logged_in) {
+			POST(CREATE_USER, {"email": msg.email, "password_hash": hashedSaltedPass(msg.email, msg.password), "fb_id": msg.fb_id}, addUser);
+		} else if (port.name == "login") { // Handles requests from the "login" port (registration.js)
+			var validateUser = function(user) {
+				if (JSON.parse(user).logged_in) { // Successful validation
 					console.log("Valid credentials. Logging in user.");
 					port.postMessage({type: "logged-in", value: true});
 					storage.set({"signup": false}, function() {
@@ -135,13 +133,29 @@ chrome.runtime.onConnect.addListener(function(port) {
 					storage.set({"onboarding": false}, function() {
 						console.log("Onboarding set to false.");
 					});
-				} else if (!(JSON.parse(user).logged_in)) {
+
+					// Tells listeners.js to inject event listeners
+					chrome.tabs.query({active: true, currentWindow: true, function(tabs) {
+						var activeTab = tabs[0];
+						chrome.tabs.sendMessage(activeTab.id, {"message": "inject-listeners"});
+					}});
+				} else { // Unsuccessful validation
 					console.log("Invalid credentials. Try again.");
 					port.postMessage({type: "logged-in", value: false});
 				}
 			}
-			var pw_hash = hashedSaltedPass(msg.email, msg.password)
-			POST(VALIDATE_USER, {"email": msg.email, "password_hash": pw_hash}, updateUser);
+			POST(VALIDATE_USER, {"email": msg.email, "password_hash": hashedSaltedPass(msg.email, msg.password)}, validateUser);
+		} else if (port.name == "listener") { // Handles requests from listeners.js
+			var updateConversation = function(messages) {
+				// Tells popup.js to update the graph
+				chrome.tabs.query({active: true, currentWindow: true, function(tabs) {
+					var activeTab = tabs[0];
+					chrome.tabs.sendMessage(activeTab.id, {"message": "conversation-update", "messages": JSON.parse(messages)});
+				}});
+			}
+			storage.get("credentials", function(creds) {
+				POST(UPDATE_CONVERSATION, {"email": creds["credentials"]["email"], "fb_id": msg.fb_id, "messages": msg.messages}, updateConversation);
+			});
 		}
 	});
 });
