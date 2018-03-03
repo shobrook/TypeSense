@@ -1,24 +1,17 @@
+var data;
+
+// Listens for the "conversation-update" event from the background script
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+	if (request.message == "conversation-update") {
+		console.log("A new message was received or a conversation was changed.");
+    data = (request.messages).reverse();
+	}
+});
+
+
 var margin = {top: 0, right: 0, bottom: 0, left: 0},
 width = 400;
 height = 320;
-
-var data = [{sentiment: -10, id:0, author: true},
-{sentiment: 40, id:1, author: false},
-{sentiment: -10, id:2, author: true},
-{sentiment: -50, id:3, author: true},
-{sentiment: 30, id:4, author: false},
-{sentiment: 60, id:5, author: true},
-{sentiment: 50, id:6, author: true},
-{sentiment: -20, id:7, author: false},
-{sentiment: -10, id:8, author: true},
-{sentiment: 40, id:9, author: false},
-{sentiment: -10, id:10, author: true},
-{sentiment: -50, id:11, author: true},
-{sentiment: 30, id:12, author: false},
-{sentiment: 60, id:13, author: true},
-{sentiment: 50, id:14, author: true},
-{sentiment: -20, id:15, author: false},
-{sentiment: -20, id:16, author: false}].reverse();
 
 // Add svg to
 var svg = d3.select('#graph').append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
