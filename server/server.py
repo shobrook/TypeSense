@@ -21,7 +21,7 @@ mongo = PyMongo(app)
 """
 DATA MODEL
 Collections: users, connections, conversations
-Users: {"_id": ObjectId(), "fb_id": int(), "email": str(), "password": str(), "connections": [ObjectId(), ...]}
+Users: {"_id": ObjectId(), "fb_id": int(), "email": str(), "password_hash": str(), "salt" : str(), "connections": [ObjectId(), ...]}
 Connections: {"_id": ObjectId(), "fb_id": str(), "conversations": [{"user_id": ObjectId(), "conversation_id": ObjectId()}, ...]}
 Conversations: {"_id": ObjectId(), "messages": [{"hash": str(), "sentiment": int(), "author": bool()}, ...]}
 """
@@ -97,7 +97,7 @@ def main():
 @app.route("/TypeSense/api/create_user", methods=["POST"])
 def create_user():
 	"""Creates a new user document; also checks if email already exists. Payload
-    format: {'email': str(), 'password': str(), 'fb_id': int()}."""
+    format: {'email': str(), 'password_hash': str(), 'salt' : str(), 'fb_id': int()}."""
 	if not request.json or not "email" in request.json:
 		abort(400, "new_user(): request.json does not exist or does not contain 'email'")
 
@@ -107,7 +107,8 @@ def create_user():
 
 	mongo.db.users.insert({
 		"email"      : request.json["email"],
-		"password"   : request.json["password"],  # NOTE: Password is stored insecurely
+		"password_hash"   : request.json["password_hash"],  # NOTE: Password is stored insecurely
+		"salt"			: request.json["salt"],
 		"fb_id"      : request.json["fb_id"],
 		"connections": []
 	})
