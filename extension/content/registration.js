@@ -1,7 +1,7 @@
 /* GLOBALS */
 
-var registerPort = chrome.runtime.connect(window.localStorage.getItem('tabber-id'), {name: "register"});
-var loginPort = chrome.runtime.connect(window.localStorage.getItem('tabber-id'), {name: "login"});
+var registerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "register"});
+var loginPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "login"});
 
 var neuzeitBook = chrome.extension.getURL('/extension/assets/Neuzeit-Book.ttf');
 var neuzeitBookHeavy = chrome.extension.getURL('/extension/assets/Neuzeit-Book-Heavy.ttf')
@@ -16,10 +16,10 @@ var registerPayload = function() {
 	var canvas = document.createElement('div');
 	var signUpDialog = document.createElement("div");
 
-	var formDefs = `<div id="tabberHeader">
-      							<img id="tabberWordmark" src="https://image.ibb.co/gE9Tja/Tabber_Wordmark.png">
+	var formDefs = `<div id="typesenseHeader">
+      							<img id="typesenseWordmark" src="https://image.ibb.co/gE9Tja/typesense_Wordmark.png">
 							      <img id="registerExit" src="https://image.ibb.co/drrQfF/Exit_Button.png">
-							    </div><!--#tabberHeader-->
+							    </div><!--#typesenseHeader-->
 							    <div id="dialogTabsWrapper">
 							      <div class="dialogTabs">
 							        <h3 id="signUpTab">SIGN UP</h3>
@@ -35,8 +35,8 @@ var registerPayload = function() {
 							          <p>Email is already in use.</p>
 							        </div><!--#invalidEmailError-->
 							        <form id="signUpForm">
-							          <input type="email" class="inputFields" id="tabberEmail" autocomplete="off" placeholder="Email Address">
-							          <input type="password" class="inputFields" id="tabberPass" autocomplete="off" placeholder="Password">
+							          <input type="email" class="inputFields" id="typesenseEmail" autocomplete="off" placeholder="Email Address">
+							          <input type="password" class="inputFields" id="typesensePass" autocomplete="off" placeholder="Password">
 							          <img id="greyPassCheckMark" class="passCheckMark" src="https://image.ibb.co/eKg0Ea/Password_Check_GREY.png">
 							          <img id="greenPassCheckMark" class="passCheckMark" src="https://image.ibb.co/gOdafF/Password_Check_GREEN.png" style="display: none;">
 							          <input id="signUpButton" class="signUpLoginButton" type="submit" value="Get Started">
@@ -50,8 +50,8 @@ var registerPayload = function() {
 							          <p>Incorrect email or password.</p>
 							        </div><!--#invalidCredentialsError-->
 							        <form id="loginForm">
-							          <input type="email" class="inputFields" id="tabberEmail" autocomplete="off" placeholder="Email Address">
-							          <input type="password" class="inputFields" id="tabberPass" autocomplete="off" placeholder="Password">
+							          <input type="email" class="inputFields" id="typesenseEmail" autocomplete="off" placeholder="Email Address">
+							          <input type="password" class="inputFields" id="typesensePass" autocomplete="off" placeholder="Password">
 							          <input id="loginButton" type="submit" class="signUpLoginButton" value="Continue">
 							          <div id="forgotYourPassword">
 							            <p>Forgot your password?</p>
@@ -83,7 +83,7 @@ var registerPayload = function() {
 	signUpDialog.innerHTML = formDefs; // Wraps the signup form and tabs with the dialog container
 
 	// Assigns CSS to the signup form and tabs
-	document.getElementsByTagName('style')[0].innerHTML = `#tabberHeader {
+	document.getElementsByTagName('style')[0].innerHTML = `#typesenseHeader {
 																												  background-color: #2C9ED4;
 																												  position: relative;
 																												  height: 42px;
@@ -91,7 +91,7 @@ var registerPayload = function() {
 																												  border-radius: 10px 10px 0px 0px;
 																												}
 
-																												#tabberWordmark {
+																												#typesenseWordmark {
 																												  position: relative;
 																												  height: 16px;
 																												  margin-top: 12px;
@@ -183,11 +183,11 @@ var registerPayload = function() {
 																												  color: #7D858E;
 																												}
 
-																												#tabberEmail::-webkit-input-placeholder {
+																												#typesenseEmail::-webkit-input-placeholder {
 																												  color: #CDD8E6;
 																												}
 
-																												#tabberPass::-webkit-input-placeholder {
+																												#typesensePass::-webkit-input-placeholder {
 																												  color: #CDD8E6;
 																												}
 
@@ -271,7 +271,7 @@ var registerPayload = function() {
 
 	var greyPassCheckMark = document.getElementById("greyPassCheckMark");
 	var greenPassCheckMark = document.getElementById("greenPassCheckMark");
-	var passwordField = document.getElementById("tabberPass");
+	var passwordField = document.getElementById("typesensePass");
 
 	var passwordHelpText = document.getElementById("passwordHelpText");
 	var invalidEmailError = document.getElementById("invalidEmailError");
@@ -334,24 +334,27 @@ var registerPayload = function() {
 
 	// Pull inputs from signup form and passes credentials to content script
 	signUpForm.onsubmit = function() {
-		var email = (this).tabberEmail.value;
-		var password = (this).tabberPass.value;
+		var email = (this).typesenseEmail.value;
+		var password = (this).typesensePass.value;
 
 		if (password.length < 10) {
 			console.log("User's password is too short.");
 			passwordHelpText.style.color = "#EC3D3D";
-			(this).tabberPass.value = "";
+			(this).typesensePass.value = "";
 			invalidEmailError.style.display = "none";
 			signUpDialog.style.height = "288px";
-		} else
+		} else {
+			// TODO: hashed and salted password
 			window.postMessage({type: "signup-credentials", value: {"email": email, "password": password}}, '*');
+
+		}
+
 	}
 
 	// Pull inputs from login form and pass credentials to content script
 	loginForm.onsubmit = function() {
-		var email = (this).tabberEmail.value;
-		var password = (this).tabberPass.value;
-
+		var email = (this).typesenseEmail.value;
+		var password = (this).typesensePass.value;
 		window.postMessage({type: "login-credentials", value: {"email": email, "password": password}}, '*');
 	}
 
@@ -392,13 +395,14 @@ var registerInject = function() {
 // Listens for the "prompt-signup" event from the background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 	if (request.message == "prompt-signup") {
-		console.log("User hasn't signed up for (or logged in) tabber.");
+		console.log("User hasn't signed up for (or logged in) typesense.");
 		registerInject();
 	}
 });
 
 // Pulls credentials from JS injection and passes to background script
 window.addEventListener('message', function(event) {
+
 	if (event.data.type == "signup-credentials")
 		registerPort.postMessage({email: event.data.value.email, password: event.data.value.password});
 	else if (event.data.type == "login-credentials")
