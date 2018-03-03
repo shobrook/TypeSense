@@ -4,6 +4,7 @@
 # from bson.errors import InvalidId
 from bson.objectid import ObjectId
 from flask import Flask, jsonify, request, abort
+from flask.ext.bcrypt import Bcrypt
 from flask_pymongo import PyMongo
 from textblob import TextBlob
 from pprint import pprint
@@ -12,6 +13,7 @@ import hashlib
 DEBUG = True
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
 app.config['MONGO_DBNAME'] = 'typesensedb'
 app.config['MONGO_URI'] = 'mongodb://localhost:27017/typesensedb'
@@ -21,7 +23,7 @@ mongo = PyMongo(app)
 """
 DATA MODEL
 Collections: users, connections, conversations
-Users: {"_id": ObjectId(), "fb_id": int(), "email": str(), "password_hash": str(), "salt" : str(), "connections": [ObjectId(), ...]}
+Users: {"_id": ObjectId(), "fb_id": int(), "email": str(), "password_hash": str(), "connections": [ObjectId(), ...]}
 Connections: {"_id": ObjectId(), "fb_id": str(), "conversations": [{"user_id": ObjectId(), "conversation_id": ObjectId()}, ...]}
 Conversations: {"_id": ObjectId(), "messages": [{"hash": str(), "sentiment": int(), "author": bool()}, ...]}
 """
@@ -93,22 +95,33 @@ def main():
 	"""Default response; returns an error code."""
 	return 404
 
+@app.route("/TypeSense/api/get_salt", methods=["GET"])
+def get_salt():
+	"""Gets salt for a user"""
+	if not request.json or not "email" in request.json:
+		abort(400, "new_user(): request.json does not exist or does not contain 'email'")
+
+	# Return salt in format: { "salt" : str(email+typesense) }
+	for user in mongo.db.users.find():
+		if user["email"] == request.json["email"]:
+			return jsonify({"salt": user["email"] + "+typesense"})
+
 
 @app.route("/TypeSense/api/create_user", methods=["POST"])
 def create_user():
 	"""Creates a new user document; also checks if email already exists. Payload
-    format: {'email': str(), 'password_hash': str(), 'salt' : str(), 'fb_id': int()}."""
-	if not request.json or not "email" in request.json:
+    format: {'email': str(), 'password_hash': str(), 'fb_id': int()}."""
+	if not request.json or not "email" and "password_hash" and "fb_id" and "connections" in request.json:
 		abort(400, "new_user(): request.json does not exist or does not contain 'email'")
 
+	# Make sure the email doesn't already correspond to an account.
 	for user in mongo.db.users.find():
 		if user["email"] == request.json["email"]:
 			return jsonify({"registered": False})
 
 	mongo.db.users.insert({
 		"email"      : request.json["email"],
-		"password_hash"   : request.json["password_hash"],  # NOTE: Password is stored insecurely
-		"salt"			: request.json["salt"],
+		"password_hash"   : request.json["password_hash"],
 		"fb_id"      : request.json["fb_id"],
 		"connections": []
 	})
@@ -119,9 +132,17 @@ def create_user():
 @app.route("/TypeSense/api/validate_user", methods=["POST"])
 def validate_user():
 	"""Checks if login credentials are valid. Payload format: {'email': str(),
-    'password': str()}."""
-	if not request.json or not "email" in request.json:
-		abort(400, "check_user(): request.json does not exist or does not contain 'email'")
+    'password_hash': str()}."""
+	if not request.json or not "email" and "password_hash" in request.json:
+		abort(400, "check_user(): request.json does not exist or does not contain 'email' or 'password_hash'")
+
+	# TODO: PASSWORD AUTHENTICATION W/ bcrypt
+	# TODO: https://flask-bcrypt.readthedocs.io/en/latest/
+
+	user_pw_hash = request.json["password_hash"]
+
+	pw_hash = bcrypt.generate_password_hash(user_pw_hash).decode(‘utf-8’)
+	bcrypt.check_password_hash(user_pw_hash, 'hunter2') # returns True
 
 	for user in mongo.db.users.find():
 		if user["email"] == request.json["email"] and user["password_hash"] == request.json["password_hash"]:
