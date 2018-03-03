@@ -1,3 +1,6 @@
+var bcrypt = require('libraries/bcrypt.js');
+var crypto = require('crypto');
+
 /* Globals */
 
 
@@ -17,17 +20,10 @@ chrome.identity.getAuthToken({interactive: true}, function(token) {
 });
 */
 
-// Dev REST API endpoints
-const NEW_USER = "http://localhost:5000/TypeSense/api/new_user";
-const CHECK_USER = "http://localhost:5000/TypeSense/api/check_user";
-const NEW_CONNECTION = "http://localhost:5000/TypeSense/api/new_connection";
-const NEW_MESSAGE = "http://localhost:5000/TypeSense/api/new_message";
-
-// Prod REST API endpoints
-// const NEW_USER = "http://localhost:5000/TypeSense/api/new_user";
-// const CHECK_USER = "http://localhost:5000/TypeSense/api/check_user";
-// const NEW_CONNECTION = "http://localhost:5000/TypeSense/api/new_connection";
-// const NEW_MESSAGE = "http://localhost:5000/TypeSense/api/new_message";
+// REST API endpoints
+const CREATE_USER = "http://localhost:5000/TypeSense/api/new_user";
+const VALIDATE_USER = "http://localhost:5000/TypeSense/api/check_user";
+const UPDATE_CONVERSATION = "http://localhost:5000/TypeSense/api/new_connection";
 
 // Creates an HTTP POST request
 var POST = function(url, payload, callback) {
@@ -93,6 +89,14 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	});
 });
 
+// Hash and salt a password
+var hashSaltPassword = function(email, password) {
+	var bcrypt = dcodeIO.bcrypt;
+  var salt = GET(get_salt, {"email": msg.email});
+  var hash = bcrypt.hashSync(password, salt);
+	return hash
+}
+
 // Listens for long-lived port connections (from content scripts)
 chrome.runtime.onConnect.addListener(function(port) {
 	port.onMessage.addListener(function(msg) {
@@ -118,7 +122,8 @@ chrome.runtime.onConnect.addListener(function(port) {
 					port.postMessage({type: "registered", value: false});
 				}
 			}
-			POST(NEW_USER, {"email": msg.email, "password": msg.password}, addUser);
+			var pw_hash = hashedSaltedPass(msg.email, msg.password)
+			POST(CREATE_USER, {"email": msg.email, "password": pw_hash}, addUser);
 		} else if (port.name == "login") { // Handles requests from the "login" port
 			var updateUser = function(user) {
 				if (JSON.parse(user).logged_in) {
@@ -135,7 +140,8 @@ chrome.runtime.onConnect.addListener(function(port) {
 					port.postMessage({type: "logged-in", value: false});
 				}
 			}
-			POST(CHECK_USER, {"email": msg.email, "password": msg.password}, updateUser);
+			var pw_hash = hashedSaltedPass(msg.email, msg.password)
+			POST(VALIDATE_USER, {"email": msg.email, "password_hash": pw_hash}, updateUser);
 		}
 	});
 });
