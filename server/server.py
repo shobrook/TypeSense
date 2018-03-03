@@ -124,7 +124,7 @@ def validate_user():
 		abort(400, "check_user(): request.json does not exist or does not contain 'email'")
 
 	for user in mongo.db.users.find():
-		if user["email"] == request.json["email"] and user["password"] == request.json["password"]:
+		if user["email"] == request.json["email"] and user["password_hash"] == request.json["password_hash"]:
 			return jsonify({"logged_in": True})
 
 	return jsonify({"logged_in": False})
