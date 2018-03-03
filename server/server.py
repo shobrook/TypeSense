@@ -97,14 +97,14 @@ def main():
 
 @app.route("/TypeSense/api/get_salt", methods=["GET"])
 def get_salt():
-	"""Gets salt for a user"""
+	"""Returns user's email address to be used as a salt for hashing in background.js"""
 	if not request.json or not "email" in request.json:
 		abort(400, "new_user(): request.json does not exist or does not contain 'email'")
 
-	# Return salt in format: { "salt" : str(email+typesense) }
+	# Return salt in format: { "salt" : str(email) }
 	for user in mongo.db.users.find():
 		if user["email"] == request.json["email"]:
-			return jsonify({"salt": user["email"] + "+typesense"})
+			return jsonify({"salt": user["email"]})
 
 
 @app.route("/TypeSense/api/create_user", methods=["POST"])
@@ -119,9 +119,13 @@ def create_user():
 		if user["email"] == request.json["email"]:
 			return jsonify({"registered": False})
 
+	# https://flask-bcrypt.readthedocs.io/en/latest/
+	# Hash already hashed and salted pw again, and store that hash in Mongo
+	double_pw_hash = bcrypt.generate_password_hash(request.json["password_hash"]).decode(‘utf-8’)
+
 	mongo.db.users.insert({
 		"email"      : request.json["email"],
-		"password_hash"   : request.json["password_hash"],
+		"password_hash"   : double_pw_hash,
 		"fb_id"      : request.json["fb_id"],
 		"connections": []
 	})
@@ -136,17 +140,17 @@ def validate_user():
 	if not request.json or not "email" and "password_hash" in request.json:
 		abort(400, "check_user(): request.json does not exist or does not contain 'email' or 'password_hash'")
 
-	# TODO: PASSWORD AUTHENTICATION W/ bcrypt
-	# TODO: https://flask-bcrypt.readthedocs.io/en/latest/
-
-	user_pw_hash = request.json["password_hash"]
-
-	pw_hash = bcrypt.generate_password_hash(user_pw_hash).decode(‘utf-8’)
-	bcrypt.check_password_hash(user_pw_hash, 'hunter2') # returns True
+	# Password Authentication W/ bcrypt
+	# https://flask-bcrypt.readthedocs.io/en/latest/
 
 	for user in mongo.db.users.find():
-		if user["email"] == request.json["email"] and user["password_hash"] == request.json["password_hash"]:
-			return jsonify({"logged_in": True})
+		if user["email"] == request.json["email"]:
+
+			# Hash singly hashed password from request.json and compare it to the value in mongoDB
+			mongo_doubly_hashed_pw = mongo.db.users.find_one( {"email" : request.json["email"]} )["password_hash"]
+			valid_pw = bcrypt.check_password_hash(mongo_doubly_hashed_pw, request.json["password_hash"])
+			# Valid_pw is a boolean
+			return jsonify({"logged_in": valid_pw})
 
 	return jsonify({"logged_in": False})
 
