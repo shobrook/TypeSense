@@ -79,7 +79,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	});
 });
 
-// Hash and salt a password
+// Hash a password with salt = the user's email address
 var hashSaltPassword = function(email, password) {
 	var bcrypt = dcodeIO.bcrypt;
   var salt = GET(get_salt, {"email": msg.email});
@@ -121,7 +121,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 					port.postMessage({type: "registered", value: false});
 				}
 			}
-			POST(CREATE_USER, {"email": msg.email, "password_hash": hashedSaltedPass(msg.email, msg.password), "fb_id": msg.fb_id}, addUser);
+			POST(CREATE_USER, {"email": msg.email, "password_hash": hashSaltPass(msg.email, msg.password), "fb_id": msg.fb_id}, addUser);
 		} else if (port.name == "login") { // Handles requests from the "login" port (registration.js)
 			var validateUser = function(user) {
 				if (JSON.parse(user).logged_in) { // Successful validation
@@ -144,7 +144,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 					port.postMessage({type: "logged-in", value: false});
 				}
 			}
-			POST(VALIDATE_USER, {"email": msg.email, "password_hash": hashedSaltedPass(msg.email, msg.password)}, validateUser);
+			POST(VALIDATE_USER, {"email": msg.email, "password_hash": hashSaltPass(msg.email, msg.password)}, validateUser);
 		} else if (port.name == "listener") { // Handles requests from listeners.js
 			var updateConversation = function(messages) {
 				// Tells popup.js to update the graph
