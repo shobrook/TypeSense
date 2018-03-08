@@ -1,17 +1,16 @@
 /* Globals */
 
-var onboardingPort = chrome.runtime.connect(window.localStorage.getItem('typsense-id'), {name: "onboarding"});
 
-/* Main */
+const onboardingPort = chrome.runtime.connect(window.localStorage.getItem('typsense-id'), {name: "onboarding"});
 
 // Explains how to select a conversation
-var selectMessagesProtipPayload = function() {
+const selectMessagesProtipPayload = function() {
 	console.log("Prompting post-signup tutorial.");
 
-	var canvas = document.createElement('div');
-	var protip = document.createElement("div");
+	let canvas = document.createElement('div');
+	let protip = document.createElement("div");
 
-	var tipDefs = `<div style="top: 5.5%; text-align: center; padding-top: 4%; position: relative;">
+	let tipDefs = `<div style="top: 5.5%; text-align: center; padding-top: 4%; position: relative;">
 										<h3 style="font-family: Helvetica; font-size: 15px; font-weight: 600; color: rgb(125,132,142);"> Welcome to the club :) </h3>
 										<p style="font-family: Helvetica; font-weight: 400; font-size: 14px; color: rgb(125,132,142); width: 79%; margin-left: auto; margin-right: auto;"> To get started, open a conversation and click the extension icon to view its graph.</p>
 										<form id="form-wrapper"><input id="got-it" type="submit" value="Got it!" style="border: none; color: rgb(255,255,255); background-color: rgb(44,158,212); text-align: center; font-family: Helvetica; font-size: 14px; font-weight: 400; padding: 12px 10%; border-radius: 12px 2px 12px 2px; cursor: pointer; margin-top: 3.05%; outline: none;"></form>
@@ -43,8 +42,8 @@ var selectMessagesProtipPayload = function() {
 	document.body.appendChild(canvas); // Imposes a low-opacity "canvas" on entire page
 	document.body.appendChild(protip); // Prompts the protip
 
-	var confirm = document.getElementById("got-it");
-	var form = document.getElementById("form-wrapper");
+	let confirm = document.getElementById("got-it");
+	let form = document.getElementById("form-wrapper");
 
 	// NOTE: Not the best or most sustainable alternative to :hover
 	confirm.onmouseover = function() {
@@ -72,11 +71,14 @@ var selectMessagesProtipPayload = function() {
 }
 
 // Prepares the selectMessagesProtip JS injection
-var selectMessagesProtipInject = function() {
-	var script = document.createElement('script');
+const selectMessagesProtipInject = function() {
+	let script = document.createElement('script');
 	script.textContent = "(" + selectMessagesProtipPayload.toString() + ")();";
 	document.head.appendChild(script);
 }
+
+
+/* Main */
 
 
 // Listens for the "first-signup" event from background script

@@ -8,12 +8,14 @@
     "http://localhost:5000/TypeSense/api/*",
     "identity",
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs",
+    "webNavigation"
   ],
   "browser_action": {
     "default_title": "TypeSense",
     "default_icon": "extension/assets/icon.png",
-    "default_popup": "extension/templates/popup.html"
+    "default_popup": "extension/popup/popup.html"
   },
   "web_accessible_resources": [
     "https://d3js.org/d3.v4.min.js"
@@ -28,7 +30,7 @@
       "http://www.messenger.com/*",
       "https://www.messenger.com/*"
     ],
-    "js": ["extension/libraries/jquery-3.2.1.min.js", "extension/content/registration.js"],
+    "js": ["extension/libraries/jquery-3.2.1.min.js", "extension/content/registration.js", "extension/content/onboarding.js", "extension/content/listeners.js"],
     "run_at": "document_end"
   }]
 }
