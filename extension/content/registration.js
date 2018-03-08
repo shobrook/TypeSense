@@ -1,14 +1,12 @@
-/* GLOBALS */
+/* Globals */
+
 
 var registerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "register"});
 var loginPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "login"});
 
-var neuzeitBook = chrome.extension.getURL('/extension/assets/Neuzeit-Book.ttf');
-var neuzeitBookHeavy = chrome.extension.getURL('/extension/assets/Neuzeit-Book-Heavy.ttf')
 
-//injectedRegisterDialog = false;
+/* Main */
 
-/* MAIN */
 
 var registerPayload = function() {
 	console.log("Prompting sign-up dialog.");
@@ -332,6 +330,20 @@ var registerPayload = function() {
 		loginForm.reset();
 	}
 
+	// Pulls the current user's Facebook ID
+	var getUserID = () => {
+	  var messageList = document.querySelectorAll("[class='_1t_p clearfix']");
+		messageList.forEach(function(messageNode) {
+			(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
+				if (message) {
+					if (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2]) {
+						return (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2].split("\"")[0]);
+					}
+				}
+			});
+		});
+	}
+
 	// Pull inputs from signup form and passes credentials to content script
 	signUpForm.onsubmit = function() {
 		var email = (this).typesenseEmail.value;
@@ -344,9 +356,7 @@ var registerPayload = function() {
 			invalidEmailError.style.display = "none";
 			signUpDialog.style.height = "288px";
 		} else {
-			// TODO: hashed and salted password
-			window.postMessage({type: "signup-credentials", value: {"email": email, "password": password}}, '*');
-
+			window.postMessage({type: "signup-credentials", value: {"fb_id": getUserID(), "email": email, "password": password}}, '*');
 		}
 
 	}
@@ -402,12 +412,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 // Pulls credentials from JS injection and passes to background script
 window.addEventListener('message', function(event) {
-
 	if (event.data.type == "signup-credentials")
-		registerPort.postMessage({email: event.data.value.email, password: event.data.value.password});
+		registerPort.postMessage({fb_id: event.data.value.fb_id, email: event.data.value.email, password: event.data.value.password});
 	else if (event.data.type == "login-credentials")
 		loginPort.postMessage({email: event.data.value.email, password: event.data.value.password});
-	//else if (event.data.type == "canvas-click")
 });
 
 // Listens for signup validation and passes to JS injection
