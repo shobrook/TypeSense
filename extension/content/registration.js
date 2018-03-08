@@ -1,20 +1,16 @@
 /* Globals */
 
 
-var registerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "register"});
-var loginPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "login"});
+const registerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "register"});
+const loginPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "login"});
 
-
-/* Main */
-
-
-var registerPayload = function() {
+const registerPayload = function() {
 	console.log("Prompting sign-up dialog.");
 
-	var canvas = document.createElement('div');
-	var signUpDialog = document.createElement("div");
+	let canvas = document.createElement('div');
+	let signUpDialog = document.createElement("div");
 
-	var formDefs = `<div id="typesenseHeader">
+	let formDefs = `<div id="typesenseHeader">
       							<img id="typesenseWordmark" src="https://image.ibb.co/gE9Tja/typesense_Wordmark.png">
 							      <img id="registerExit" src="https://image.ibb.co/drrQfF/Exit_Button.png">
 							    </div><!--#typesenseHeader-->
@@ -257,25 +253,25 @@ var registerPayload = function() {
 	document.body.appendChild(canvas); // Imposes a low-opacity canvas on entire page
 	document.body.appendChild(signUpDialog); // Prompts the signup dialog
 
-	var signUpTab = document.getElementById("signUpTab");
-	var loginTab = document.getElementById("loginTab");
+	let signUpTab = document.getElementById("signUpTab");
+	let loginTab = document.getElementById("loginTab");
 
-	var loginTabContent = document.getElementById("loginTabContent");
-	var signUpTabContent = document.getElementById("signUpTabContent");
-	var selector = document.getElementById("selector");
+	let loginTabContent = document.getElementById("loginTabContent");
+	let signUpTabContent = document.getElementById("signUpTabContent");
+	let selector = document.getElementById("selector");
 
-	var signUpForm = document.getElementById("signUpForm");
-	var loginForm = document.getElementById("loginForm");
+	let signUpForm = document.getElementById("signUpForm");
+	let loginForm = document.getElementById("loginForm");
 
-	var greyPassCheckMark = document.getElementById("greyPassCheckMark");
-	var greenPassCheckMark = document.getElementById("greenPassCheckMark");
-	var passwordField = document.getElementById("typesensePass");
+	let greyPassCheckMark = document.getElementById("greyPassCheckMark");
+	let greenPassCheckMark = document.getElementById("greenPassCheckMark");
+	let passwordField = document.getElementById("typesensePass");
 
-	var passwordHelpText = document.getElementById("passwordHelpText");
-	var invalidEmailError = document.getElementById("invalidEmailError");
-	var invalidCredentialsError = document.getElementById("invalidCredentialsError");
+	let passwordHelpText = document.getElementById("passwordHelpText");
+	let invalidEmailError = document.getElementById("invalidEmailError");
+	let invalidCredentialsError = document.getElementById("invalidCredentialsError");
 
-	var exitButton = document.getElementById("registerExit");
+	let exitButton = document.getElementById("registerExit");
 
 	// Changes grey checkmark to green when user types a password >= 10 characters
 	passwordField.onkeyup = function() {
@@ -331,8 +327,8 @@ var registerPayload = function() {
 	}
 
 	// Pulls the current user's Facebook ID
-	var getUserID = () => {
-	  var messageList = document.querySelectorAll("[class='_1t_p clearfix']");
+	let getUserID = () => {
+	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
 		messageList.forEach(function(messageNode) {
 			(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
 				if (message) {
@@ -346,8 +342,8 @@ var registerPayload = function() {
 
 	// Pull inputs from signup form and passes credentials to content script
 	signUpForm.onsubmit = function() {
-		var email = (this).typesenseEmail.value;
-		var password = (this).typesensePass.value;
+		let email = (this).typesenseEmail.value;
+		let password = (this).typesensePass.value;
 
 		if (password.length < 10) {
 			console.log("User's password is too short.");
@@ -363,8 +359,8 @@ var registerPayload = function() {
 
 	// Pull inputs from login form and pass credentials to content script
 	loginForm.onsubmit = function() {
-		var email = (this).typesenseEmail.value;
-		var password = (this).typesensePass.value;
+		let email = (this).typesenseEmail.value;
+		let password = (this).typesensePass.value;
 		window.postMessage({type: "login-credentials", value: {"email": email, "password": password}}, '*');
 	}
 
@@ -396,11 +392,15 @@ var registerPayload = function() {
 }
 
 // Prepares the JS injection
-var registerInject = function() {
-	var script = document.createElement('script');
+const registerInject = function() {
+	let script = document.createElement('script');
 	script.textContent = "(" + registerPayload.toString() + ")();";
 	document.head.appendChild(script);
 }
+
+
+/* Main */
+
 
 // Listens for the "prompt-signup" event from the background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
