@@ -327,14 +327,15 @@ const registerPayload = function() {
 	}
 
 	// Pulls the current user's Facebook ID
-	let getUserID = () => {
+	const getUserID = () => {
 	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
 		Array.from(messageList).forEach(function(messageNode) {
 			Array.from(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
 				if (message) {
-					if (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2]) {
-						return (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2].split("\"")[0]);
-					}
+					let map = message.children[1].children[0].getAttribute("participants");
+
+					if (map != null && map.split("\"fbid:")[2])
+						return map.split("\"fbid:")[2].split("\"")[0];
 				}
 			});
 		});
