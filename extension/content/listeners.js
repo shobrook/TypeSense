@@ -8,8 +8,12 @@ const eventListeners = (getFBID) => {
 	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
 		Array.from(messageList).forEach((messageNode) => {
 			Array.from(messageNode.getElementsByClassName("_41ud")).forEach((message) => {
-				if (message)
-					return (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[1].split("\"")[0]);
+				if (message) {
+					let map = message.children[1].children[0].getAttribute("participants");
+
+					if (map != null)
+						return int(map.split("\"fbid:")[1].split("\"")[0]);
+				}
 			});
 		});
 	}
@@ -56,7 +60,7 @@ const eventListeners = (getFBID) => {
 	// Listens for a new message
 	document.getElementById("js_1").addEventListener('DOMNodeInserted', (event) => {
     if (event.target.parentNode.id == "js_1") {
-			window.postMessage({type: "event-notifications", value: {"fb_id": /*getRecipientID()*/"123", "messages": scrapeMessages()}}, '*');
+			window.postMessage({type: "event-notifications", value: {"fb_id": getRecipientID(), "messages": scrapeMessages()}}, '*');
     }
 	}, false);
 
@@ -65,31 +69,12 @@ const eventListeners = (getFBID) => {
 	setInterval(function() {
 		if (location.href != oldLocation) {
 			// TODO: Detect non-convo URLs
-			window.postMessage({type: "event-notifications", value: {"fb_id": /*getRecipientID()*/"123", "messages": scrapeMessages()}}, '*');
+			window.postMessage({type: "event-notifications", value: {"fb_id": getRecipientID(), "messages": scrapeMessages()}}, '*');
 			oldLocation = location.href;
 		}
 	}, 100);
 
-	/*
-	var target = (document.querySelector("[aria-label='Conversation List']")).childNodes;
-	for (var i = 0; i < target.length; i++) {
-  	create(target[i]);
-	}
-
-	function create(t) {
-  	var observer = new MutationObserver(function(mutations) {
-    	console.log("Conversation changed.");
-  	});
-
-		var config = {
-			attributes: true
-		};
-
-		observer.observe(t, config);
-	}
-	*/
-
-	window.postMessage({type: "event-notifications", value: {"fb_id": /*getRecipientID()*/"123", "messages": scrapeMessages()}}, '*');
+	window.postMessage({type: "event-notifications", value: {"fb_id": getRecipientID(), "messages": scrapeMessages()}}, '*');
 }
 
 // Prepares the JS injection
