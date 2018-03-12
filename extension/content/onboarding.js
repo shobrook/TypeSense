@@ -4,7 +4,7 @@
 const onboardingPort = chrome.runtime.connect(window.localStorage.getItem('typsense-id'), {name: "onboarding"});
 
 // Explains how to select a conversation
-const selectMessagesProtipPayload = function() {
+const selectMessagesProtipPayload = () => {
 	console.log("Prompting post-signup tutorial.");
 
 	let canvas = document.createElement('div');
@@ -46,22 +46,22 @@ const selectMessagesProtipPayload = function() {
 	let form = document.getElementById("form-wrapper");
 
 	// NOTE: Not the best or most sustainable alternative to :hover
-	confirm.onmouseover = function() {
+	confirm.onmouseover = () => {
 		this.style.backgroundColor = "rgb(101,184,203)";
 	}
 
 	// NOTE: Not the best or most sustainable alternative to :hover
-	confirm.onmouseout = function() {
+	confirm.onmouseout = () => {
 		this.style.backgroundColor = "rgb(44,158,212)";
 	}
 
-	form.onsubmit = function() {
+	form.onsubmit = () => {
 		console.log("User accepted the protip.");
 		document.body.removeChild(protip);
 		document.body.removeChild(canvas);
 	}
 
-	canvas.onclick = function() {
+	canvas.onclick = () => {
 		console.log("User left the protip.");
 		document.body.removeChild(protip);
 		document.body.removeChild(canvas);
@@ -71,7 +71,7 @@ const selectMessagesProtipPayload = function() {
 }
 
 // Prepares the selectMessagesProtip JS injection
-const selectMessagesProtipInject = function() {
+const selectMessagesProtipInject = () => {
 	let script = document.createElement('script');
 	script.textContent = "(" + selectMessagesProtipPayload.toString() + ")();";
 	document.head.appendChild(script);
@@ -82,7 +82,7 @@ const selectMessagesProtipInject = function() {
 
 
 // Listens for the "first-signup" event from background script
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if (request.message == "first-signup") {
 		console.log("User signed up for the first time.");
 		selectMessagesProtipInject();
@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 // Pulls submission confirmation from JS injection and passes to background script
-window.addEventListener('message', function(event) {
+window.addEventListener('message', (event) => {
 	if (event.data.type == "submitted")
 		onboardingPort.postMessage({type: "understood", value: event.data.value});
 });

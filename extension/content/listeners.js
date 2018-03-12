@@ -2,29 +2,14 @@
 
 
 const listenerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "listener"});
-const eventListeners = function(getFBID) {
-	// Pulls the current user's Facebook ID
-	const getUserID = () => {
-	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
-		messageList.forEach(function(messageNode) {
-			(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
-				if (message) {
-					if (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2]) {
-						return (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2].split("\"")[0]);
-					}
-				}
-			});
-		});
-	}
-
+const eventListeners = (getFBID) => {
 	// Pulls the current recipient's Facebook ID
 	const getRecipientID = () => {
 	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
-		messageList.forEach(function(messageNode) {
-			(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
-				if (message) {
-					return (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[1].split("\"")[0])
-				}
+		Array.from(messageList).forEach((messageNode) => {
+			Array.from(messageNode.getElementsByClassName("_41ud")).forEach((message) => {
+				if (message)
+					return (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[1].split("\"")[0]);
 			});
 		});
 	}
@@ -33,12 +18,10 @@ const eventListeners = function(getFBID) {
 	const scrapeMessages = () => {
 		let scrapedMessages = [];
 
-		// TODO: Only scrape 23 messages
-
 		let containerNode = document.getElementsByClassName('__i_')[0];
-		containerNode.childNodes.forEach(function(child) {
+		Array.from(containerNode.childNodes).forEach((child) => {
 			if (child.tagName == 'DIV' && child.id.length > 0) {
-				child.childNodes.forEach(function(c) {
+				Array.from(child.childNodes).forEach((c) => {
 					if (c.tagName == 'DIV') {
 						let msgWrapperNodes = c.childNodes[0].getElementsByClassName('clearfix');
 
@@ -63,21 +46,54 @@ const eventListeners = function(getFBID) {
 		});
 
 		console.log("Scraped all loaded messages.");
-		return scrapedMessages;
+
+		if (scrapedMessages.length > 23)
+			return scrapedMessages.slice(scrapedMessages.length - 23);
+		else
+			return scrapedMessages;
 	}
 
 	// Listens for a new message
-	document.getElementById("js_1").addEventListener('DOMNodeInserted', function(event) {
+	document.getElementById("js_1").addEventListener('DOMNodeInserted', (event) => {
     if (event.target.parentNode.id == "js_1") {
-			window.postMessage({type: "event-notifications", value: {"fb_id": getRecipientID(), "messages": scrapeMessages()}}, '*');
+			window.postMessage({type: "event-notifications", value: {"fb_id": /*getRecipientID()*/"123", "messages": scrapeMessages()}}, '*');
     }
 	}, false);
 
-	// TODO: Add event listener for conversation change
+	// Listens for a conversation change (technically a URL change)
+	var oldLocation = location.href;
+	setInterval(function() {
+		if (location.href != oldLocation) {
+			// TODO: Detect non-convo URLs
+			window.postMessage({type: "event-notifications", value: {"fb_id": /*getRecipientID()*/"123", "messages": scrapeMessages()}}, '*');
+			oldLocation = location.href;
+		}
+	}, 100);
+
+	/*
+	var target = (document.querySelector("[aria-label='Conversation List']")).childNodes;
+	for (var i = 0; i < target.length; i++) {
+  	create(target[i]);
+	}
+
+	function create(t) {
+  	var observer = new MutationObserver(function(mutations) {
+    	console.log("Conversation changed.");
+  	});
+
+		var config = {
+			attributes: true
+		};
+
+		observer.observe(t, config);
+	}
+	*/
+
+	window.postMessage({type: "event-notifications", value: {"fb_id": /*getRecipientID()*/"123", "messages": scrapeMessages()}}, '*');
 }
 
 // Prepares the JS injection
-const listenerInject = function() {
+const listenerInject = () => {
 	var script = document.createElement("script");
 	script.textContent = "(" + eventListeners.toString() + ")();";
 	document.head.appendChild(script);
@@ -88,7 +104,7 @@ const listenerInject = function() {
 
 
 // Listens for the "inject-listeners" event from the background script
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if (request.message == "inject-listeners") {
 		console.log("User has loaded messenger, or just signed-up/logged-in.");
 		listenerInject();
@@ -96,7 +112,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 // Pulls scraped messages from JS injection and passes to background script
-window.addEventListener("message", function(event) {
+window.addEventListener("message", (event) => {
 	if (event.data.type == "event-notifications")
 		listenerPort.postMessage({fb_id: event.data.value.fb_id, messages: event.data.value.messages});
 });
