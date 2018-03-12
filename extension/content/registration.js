@@ -11,7 +11,7 @@ const registerPayload = function() {
 	let signUpDialog = document.createElement("div");
 
 	let formDefs = `<div id="typesenseHeader">
-      							<img id="typesenseWordmark" src="https://image.ibb.co/gE9Tja/typesense_Wordmark.png">
+      							<img id="typesenseWordmark" src="https://preview.ibb.co/ncnTq7/Type_Sense_Wordmark.png">
 							      <img id="registerExit" src="https://image.ibb.co/drrQfF/Exit_Button.png">
 							    </div><!--#typesenseHeader-->
 							    <div id="dialogTabsWrapper">
@@ -329,8 +329,8 @@ const registerPayload = function() {
 	// Pulls the current user's Facebook ID
 	let getUserID = () => {
 	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
-		messageList.forEach(function(messageNode) {
-			(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
+		Array.from(messageList).forEach(function(messageNode) {
+			Array.from(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
 				if (message) {
 					if (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2]) {
 						return (message.children[1].children[0].getAttribute("participants").split("\"fbid:")[2].split("\"")[0]);
