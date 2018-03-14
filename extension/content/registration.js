@@ -1,23 +1,17 @@
-/* GLOBALS */
+/* Globals */
 
-var registerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "register"});
-var loginPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "login"});
 
-var neuzeitBook = chrome.extension.getURL('/extension/assets/Neuzeit-Book.ttf');
-var neuzeitBookHeavy = chrome.extension.getURL('/extension/assets/Neuzeit-Book-Heavy.ttf')
+const registerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "register"});
+const loginPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "login"});
 
-//injectedRegisterDialog = false;
-
-/* MAIN */
-
-var registerPayload = function() {
+const registerPayload = function() {
 	console.log("Prompting sign-up dialog.");
 
-	var canvas = document.createElement('div');
-	var signUpDialog = document.createElement("div");
+	let canvas = document.createElement('div');
+	let signUpDialog = document.createElement("div");
 
-	var formDefs = `<div id="typesenseHeader">
-      							<img id="typesenseWordmark" src="https://image.ibb.co/gE9Tja/typesense_Wordmark.png">
+	let formDefs = `<div id="typesenseHeader">
+      							<img id="typesenseWordmark" src="https://preview.ibb.co/ncnTq7/Type_Sense_Wordmark.png">
 							      <img id="registerExit" src="https://image.ibb.co/drrQfF/Exit_Button.png">
 							    </div><!--#typesenseHeader-->
 							    <div id="dialogTabsWrapper">
@@ -259,25 +253,25 @@ var registerPayload = function() {
 	document.body.appendChild(canvas); // Imposes a low-opacity canvas on entire page
 	document.body.appendChild(signUpDialog); // Prompts the signup dialog
 
-	var signUpTab = document.getElementById("signUpTab");
-	var loginTab = document.getElementById("loginTab");
+	let signUpTab = document.getElementById("signUpTab");
+	let loginTab = document.getElementById("loginTab");
 
-	var loginTabContent = document.getElementById("loginTabContent");
-	var signUpTabContent = document.getElementById("signUpTabContent");
-	var selector = document.getElementById("selector");
+	let loginTabContent = document.getElementById("loginTabContent");
+	let signUpTabContent = document.getElementById("signUpTabContent");
+	let selector = document.getElementById("selector");
 
-	var signUpForm = document.getElementById("signUpForm");
-	var loginForm = document.getElementById("loginForm");
+	let signUpForm = document.getElementById("signUpForm");
+	let loginForm = document.getElementById("loginForm");
 
-	var greyPassCheckMark = document.getElementById("greyPassCheckMark");
-	var greenPassCheckMark = document.getElementById("greenPassCheckMark");
-	var passwordField = document.getElementById("typesensePass");
+	let greyPassCheckMark = document.getElementById("greyPassCheckMark");
+	let greenPassCheckMark = document.getElementById("greenPassCheckMark");
+	let passwordField = document.getElementById("typesensePass");
 
-	var passwordHelpText = document.getElementById("passwordHelpText");
-	var invalidEmailError = document.getElementById("invalidEmailError");
-	var invalidCredentialsError = document.getElementById("invalidCredentialsError");
+	let passwordHelpText = document.getElementById("passwordHelpText");
+	let invalidEmailError = document.getElementById("invalidEmailError");
+	let invalidCredentialsError = document.getElementById("invalidCredentialsError");
 
-	var exitButton = document.getElementById("registerExit");
+	let exitButton = document.getElementById("registerExit");
 
 	// Changes grey checkmark to green when user types a password >= 10 characters
 	passwordField.onkeyup = function() {
@@ -332,10 +326,25 @@ var registerPayload = function() {
 		loginForm.reset();
 	}
 
+	// Pulls the current user's Facebook ID
+	const getUserID = () => {
+	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
+		Array.from(messageList).forEach(function(messageNode) {
+			Array.from(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
+				if (message) {
+					let map = message.children[1].children[0].getAttribute("participants");
+
+					if (map != null && map.split("\"fbid:")[2])
+						return map.split("\"fbid:")[2].split("\"")[0];
+				}
+			});
+		});
+	}
+
 	// Pull inputs from signup form and passes credentials to content script
 	signUpForm.onsubmit = function() {
-		var email = (this).typesenseEmail.value;
-		var password = (this).typesensePass.value;
+		let email = (this).typesenseEmail.value;
+		let password = (this).typesensePass.value;
 
 		if (password.length < 10) {
 			console.log("User's password is too short.");
@@ -344,17 +353,15 @@ var registerPayload = function() {
 			invalidEmailError.style.display = "none";
 			signUpDialog.style.height = "288px";
 		} else {
-			// TODO: hashed and salted password
-			window.postMessage({type: "signup-credentials", value: {"email": email, "password": password}}, '*');
-
+			window.postMessage({type: "signup-credentials", value: {"fb_id": getUserID(), "email": email, "password": password}}, '*');
 		}
 
 	}
 
 	// Pull inputs from login form and pass credentials to content script
 	loginForm.onsubmit = function() {
-		var email = (this).typesenseEmail.value;
-		var password = (this).typesensePass.value;
+		let email = (this).typesenseEmail.value;
+		let password = (this).typesensePass.value;
 		window.postMessage({type: "login-credentials", value: {"email": email, "password": password}}, '*');
 	}
 
@@ -386,11 +393,15 @@ var registerPayload = function() {
 }
 
 // Prepares the JS injection
-var registerInject = function() {
-	var script = document.createElement('script');
+const registerInject = function() {
+	let script = document.createElement('script');
 	script.textContent = "(" + registerPayload.toString() + ")();";
 	document.head.appendChild(script);
 }
+
+
+/* Main */
+
 
 // Listens for the "prompt-signup" event from the background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
@@ -402,12 +413,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 // Pulls credentials from JS injection and passes to background script
 window.addEventListener('message', function(event) {
-
 	if (event.data.type == "signup-credentials")
-		registerPort.postMessage({email: event.data.value.email, password: event.data.value.password});
+		registerPort.postMessage({fb_id: event.data.value.fb_id, email: event.data.value.email, password: event.data.value.password});
 	else if (event.data.type == "login-credentials")
 		loginPort.postMessage({email: event.data.value.email, password: event.data.value.password});
-	//else if (event.data.type == "canvas-click")
 });
 
 // Listens for signup validation and passes to JS injection

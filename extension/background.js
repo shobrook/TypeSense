@@ -1,41 +1,17 @@
-// FIXME: http://requirejs.org/docs/api.html#jsfiles
-
-var requirejs = 'libraries/require.js';
-
-requirejs.config({
-    //Pass the top-level main.js/index.js require
-    //function to requirejs so that node modules
-    //are loaded relative to the top-level JS file.
-    nodeRequire: require
-});
-
-requirejs(['bcrypt', 'crypto'], function   (foo,   bar) {
-    //foo and bar are loaded according to requirejs
-    //config, but if not found, then node's require
-    //is used to load the module.
-});
-
-// var bcrypt = require('libraries/bcrypt.js');
-// var crypto = require('crypto');
-var bcrypt = requirejs('bcrypt')
-var crypto = requirejs('crypto')
-
-
 /* Globals */
 
 
 // For calling GET and SET to the extension's local storage
-var storage = chrome.storage.local;
+const storage = chrome.storage.local;
 
 /*
 // Pulls user's unique authentication token
-var oauth;
-chrome.identity.getAuthToken({interactive: true}, function(token) {
+chrome.identity.getAuthToken({interactive: true}, (token) => {
 	if (chrome.runtime.lastError) {
 		console.log("Error retrieving authToken: " + chrome.runtime.lastError.message);
 		return;
 	}
-	oauth = token;
+	var oauth = token;
 	console.log(oauth);
 });
 */
@@ -46,136 +22,120 @@ const VALIDATE_USER = "http://localhost:5000/TypeSense/api/check_user";
 const UPDATE_CONVERSATION = "http://localhost:5000/TypeSense/api/new_connection";
 
 // Creates an HTTP POST request
-var POST = function(url, payload, callback) {
-	var xhr = new XMLHttpRequest();
+const POST = (url, payload, callback) => {
+	let xhr = new XMLHttpRequest();
 	xhr.open("POST", url, true);
 	xhr.setRequestHeader("Content-type", "application/json");
-	xhr.onreadystatechange = function() {
+	xhr.onreadystatechange = () => {
 		if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) // readyState == 4
 			callback(xhr.responseText);
 	}
 	xhr.send(JSON.stringify(payload));
 }
 
-// NOTE: Set to "true" for testing only
-storage.set({"signup": true}, function() {
-	console.log("Signup is set to true.");
+// Hashes a password with the salt being the user's email address
+const HASH = (email, password) => dcodeIO.bcrypt.hashSync(password, GET(GET_SALT, {"email": email})); // QUESTION: Are you trying to make a get request @alichtman? If so, you need to implement a GET function and define a GET_SALT endpoint
+
+// Sends a message to content scripts running in the current tab
+const MESSAGE = (content) => {
+	chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+		let activeTab = tabs[0];
+		chrome.tabs.sendMessage(activeTab.id, content);
+	});
+}
+
+// NOTE: Set to "false" for testing only
+storage.set({"signed-up": false}, function() {
+	console.log("Signed-up is set to false.");
 });
 
 
-/* Main */
+/* Event Listeners */
 
 
-// Prompts the sign-up dialog on "first-install"; provides handler for extension updates
-// QUESTION: Is a listener for a "first-load" of messenger.com needed? The "onInstalled" event
-// probably fires before a user visits messenger
-chrome.runtime.onInstalled.addListener(function(details) {
+// Listens for messenger.com to be loaded and sends "inject-listeners" to listeners.js
+chrome.webNavigation.onCompleted.addListener((details) => {
+	if (details.url.includes("messenger.com")) {
+		storage.get("signed-up", (signup) => {
+			if (signup["signed-up"]) {
+				MESSAGE({"message": "inject-listeners"}); // Tells listeners.js to inject event listeners
+			}
+		});
+	}
+});
+
+// Sets "signed-up" to false on first install
+chrome.runtime.onInstalled.addListener((details) => {
 	if (details.reason == "install") {
 		console.log("User has installed TypeSense for the first time on this device.");
-		chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-			var activeTab = tabs[0];
-			chrome.tabs.sendMessage(activeTab.id, {"message": "prompt-signup"});
-		});
-		storage.set({"signup": true}, function() {
-			console.log("Signup is set to true.");
+		storage.set({"signed-up": false}, function() {
+			console.log("Signed-up is set to false.");
 		});
 	} else if (details.reason == "update") {
-		var thisVersion = chrome.runtime.getManifest().version;
+		let thisVersion = chrome.runtime.getManifest().version;
 		console.log("Updated from " + details.previousVersion + " to " + thisVersion + " :)");
 	}
 });
 
-// TODO: Add listener for when messenger.com is loaded, send listeners.js the "inject-listeners" event if !signup
-
-// Listens for the browser action to be clicked
-chrome.browserAction.onClicked.addListener(function(tab) {
-	storage.get("signup", function(signup) {
-		if (signup["signup"]) { // If user hasn't signed up or logged in yet, prompt the register process
-			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-				var activeTab = tabs[0];
-				chrome.tabs.sendMessage(activeTab.id, {"message": "prompt-signup"});
-			});
-		}
-	});
-});
-
-// Hash a password with salt = the user's email address
-var hashSaltPassword = function(email, password) {
-	var bcrypt = dcodeIO.bcrypt;
-  var salt = GET(get_salt, {"email": msg.email});
-  var hash = bcrypt.hashSync(password, salt);
-	return hash
-}
-
 // Listens for long-lived port connections (from content scripts)
-chrome.runtime.onConnect.addListener(function(port) {
-	port.onMessage.addListener(function(msg) {
+chrome.runtime.onConnect.addListener((port) => {
+	port.onMessage.addListener((msg) => {
 		if (port.name == "register") { // Handles requests from the "register" port (registration.js)
-			var addUser = function(user) {
+			let addUser = (user) => {
 				if (JSON.parse(user).registered) { // Successful registration
 					console.log("Email is valid. Registering user.");
 
-					storage.set({"credentials": {"email": msg.email, "password": msg.password}}, function() {
+					storage.set({"credentials": {"email": msg.email, "password": msg.password}}, () => {
 						port.postMessage({type: "registered", value: true});
-						storage.set({"onboarding": true}, function() {
+						storage.set({"onboarding": true}, () => {
 							console.log("Onboarding set to true.");
 						});
-						storage.set({"signup": false}, function() {
-							console.log("Signup set to false.");
+						storage.set({"signed-up": true}, () => {
+							console.log("Signed-up set to true.");
 						});
 
-						// Tells onboarding.js to prompt the onboarding dialog
-						chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-							var activeTab = tabs[0];
-							chrome.tabs.sendMessage(activeTab.id, {"message": "first-signup"});
-						});
+						MESSAGE({"message": "first-signup"}); // Tells onboarding.js to prompt the onboarding dialog
 					});
 
-					// Tells listeners.js to inject event listeners
-					chrome.tabs.query({active: true, currentWindow: true, function(tabs) {
-						var activeTab = tabs[0];
-						chrome.tabs.sendMessage(activeTab.id, {"message": "inject-listeners"});
-					}});
+					MESSAGE({"message": "inject-listeners"}); // Tells listeners.js to inject event listeners
 				} else { // Unsuccessful registration
 					console.log("Email is already in use. Try again.");
 					port.postMessage({type: "registered", value: false});
 				}
 			}
-			POST(CREATE_USER, {"email": msg.email, "password_hash": hashSaltPass(msg.email, msg.password), "fb_id": msg.fb_id}, addUser);
+			POST(CREATE_USER, {"email": msg.email, "password_hash": HASH(msg.email, msg.password), "fb_id": msg.fb_id}, addUser);
 		} else if (port.name == "login") { // Handles requests from the "login" port (registration.js)
-			var validateUser = function(user) {
+			let validateUser = (user) => {
 				if (JSON.parse(user).logged_in) { // Successful validation
 					console.log("Valid credentials. Logging in user.");
 					port.postMessage({type: "logged-in", value: true});
-					storage.set({"signup": false}, function() {
-						console.log("Signup set to false.");
+					storage.set({"signed-up": true}, () => {
+						console.log("Signed-up set to true.");
 					});
-					storage.set({"onboarding": false}, function() {
+					storage.set({"onboarding": false}, () => {
 						console.log("Onboarding set to false.");
 					});
 
-					// Tells listeners.js to inject event listeners
-					chrome.tabs.query({active: true, currentWindow: true, function(tabs) {
-						var activeTab = tabs[0];
-						chrome.tabs.sendMessage(activeTab.id, {"message": "inject-listeners"});
-					}});
+					MESSAGE({"message": "inject-listeners"}); // Tells listeners.js to inject event listeners
 				} else { // Unsuccessful validation
 					console.log("Invalid credentials. Try again.");
 					port.postMessage({type: "logged-in", value: false});
 				}
 			}
-			POST(VALIDATE_USER, {"email": msg.email, "password_hash": hashSaltPass(msg.email, msg.password)}, validateUser);
+			POST(VALIDATE_USER, {"email": msg.email, "password_hash": HASH(msg.email, msg.password)}, validateUser);
 		} else if (port.name == "listener") { // Handles requests from listeners.js
-			var updateConversation = function(messages) {
-				// Tells popup.js to update the graph
-				chrome.tabs.query({active: true, currentWindow: true, function(tabs) {
-					var activeTab = tabs[0];
-					chrome.tabs.sendMessage(activeTab.id, {"message": "conversation-update", "messages": JSON.parse(messages)});
-				}});
+		 	let updateConversation = (messages) => {
+				storage.set({"data": messages}, () => {
+					console.log("Populated local data storage.");
+				});
+				MESSAGE({"message": "conversation-update", "messages": JSON.parse(messages)}); // Tells popup.js to update the graph
 			}
-			storage.get("credentials", function(creds) {
+			storage.get("credentials", (creds) => {
 				POST(UPDATE_CONVERSATION, {"email": creds["credentials"]["email"], "fb_id": msg.fb_id, "messages": msg.messages}, updateConversation);
 			});
+		} else if (port.name == "popup") {
+			if (msg.browser_action_clicked)
+				MESSAGE({"message": "prompt-signup"});
 		}
 	});
 });
