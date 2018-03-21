@@ -33,9 +33,6 @@ const POST = (url, payload, callback) => {
 	xhr.send(JSON.stringify(payload));
 }
 
-// Hashes a password with the salt being the user's email address
-const HASH = (email, password) => dcodeIO.bcrypt.hashSync(password, GET(GET_SALT, {"email": email})); // QUESTION: Are you trying to make a get request @alichtman? If so, you need to implement a GET function and define a GET_SALT endpoint
-
 // Sends a message to content scripts running in the current tab
 const MESSAGE = (content) => {
 	chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
