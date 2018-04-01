@@ -17,9 +17,9 @@ chrome.identity.getAuthToken({interactive: true}, (token) => {
 */
 
 // REST API endpoints
-const CREATE_USER = "http://localhost:5000/TypeSense/api/new_user";
-const VALIDATE_USER = "http://localhost:5000/TypeSense/api/check_user";
-const UPDATE_CONVERSATION = "http://localhost:5000/TypeSense/api/new_connection";
+const CREATE_USER = "http://localhost:5000/TypeSense/api/create_user";
+const VALIDATE_USER = "http://localhost:5000/TypeSense/api/validate_user";
+const UPDATE_CONVERSATION = "http://localhost:5000/TypeSense/api/update_conversation";
 
 // Creates an HTTP POST request
 const POST = (url, payload, callback) => {
@@ -100,7 +100,7 @@ chrome.runtime.onConnect.addListener((port) => {
 					port.postMessage({type: "registered", value: false});
 				}
 			}
-			POST(CREATE_USER, {"email": msg.email, "password_hash": HASH(msg.email, msg.password), "fb_id": msg.fb_id}, addUser);
+			POST(CREATE_USER, {"email": msg.email, "fbid": msg.fbid, "password": msg.password}, addUser);
 		} else if (port.name == "login") { // Handles requests from the "login" port (registration.js)
 			let validateUser = (user) => {
 				if (JSON.parse(user).logged_in) { // Successful validation
@@ -119,7 +119,7 @@ chrome.runtime.onConnect.addListener((port) => {
 					port.postMessage({type: "logged-in", value: false});
 				}
 			}
-			POST(VALIDATE_USER, {"email": msg.email, "password_hash": HASH(msg.email, msg.password)}, validateUser);
+			POST(VALIDATE_USER, {"email": msg.email, "password": msg.password}, validateUser);
 		} else if (port.name == "listener") { // Handles requests from listeners.js
 		 	let updateConversation = (messages) => {
 				storage.set({"data": messages}, () => {
@@ -128,7 +128,7 @@ chrome.runtime.onConnect.addListener((port) => {
 				MESSAGE({"message": "conversation-update", "messages": JSON.parse(messages)}); // Tells popup.js to update the graph
 			}
 			storage.get("credentials", (creds) => {
-				POST(UPDATE_CONVERSATION, {"email": creds["credentials"]["email"], "fb_id": msg.fb_id, "messages": msg.messages}, updateConversation);
+				POST(UPDATE_CONVERSATION, {"email": creds["credentials"]["email"], "fbid": "test"/*msg.fbid*/, "messages": msg.messages}, updateConversation);
 			});
 		} else if (port.name == "popup") {
 			if (msg.browser_action_clicked)

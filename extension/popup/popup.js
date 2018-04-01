@@ -112,7 +112,11 @@ const createGraph = (data) => {
 chrome.storage.local.get("signed-up", (signup) => {
 	if (signup["signed-up"]) {
 		chrome.storage.local.get("data", (data) => {
-			createGraph(data["data"]);
+			console.log(data["data"]);
+			console.log(data["data"].messages);
+			console.log((data["data"])["messages"]);
+			console.log(data["data"]["messages"]);
+			createGraph(data["data"]["messages"]);
 		});
 	} else { // Tells background.js that the browser action was clicked
 		popupPort.postMessage({browser_action_clicked: true});

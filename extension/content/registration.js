@@ -334,8 +334,10 @@ const registerPayload = function() {
 				if (message) {
 					let map = message.children[1].children[0].getAttribute("participants");
 
-					if (map != null && map.split("\"fbid:")[2])
-						return map.split("\"fbid:")[2].split("\"")[0];
+					// TODO: Only return if map has two instances of "fbid"
+					if (map != null)
+						console.log(map.split("\"fbid:")[2]);
+						return (map.split("\"fbid:")[2].split("\"")[0]).toString();
 				}
 			});
 		});
@@ -353,9 +355,9 @@ const registerPayload = function() {
 			invalidEmailError.style.display = "none";
 			signUpDialog.style.height = "288px";
 		} else {
-			window.postMessage({type: "signup-credentials", value: {"fb_id": getUserID(), "email": email, "password": password}}, '*');
+			console.log("User typed in a valid password.");
+			window.postMessage({type: "signup-credentials", value: {"email": email, "password": password, "fbid": "test"/*getUserID()*/}}, '*');
 		}
-
 	}
 
 	// Pull inputs from login form and pass credentials to content script
@@ -414,7 +416,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 // Pulls credentials from JS injection and passes to background script
 window.addEventListener('message', function(event) {
 	if (event.data.type == "signup-credentials")
-		registerPort.postMessage({fb_id: event.data.value.fb_id, email: event.data.value.email, password: event.data.value.password});
+		registerPort.postMessage({fbid: event.data.value.fbid, email: event.data.value.email, password: event.data.value.password});
 	else if (event.data.type == "login-credentials")
 		loginPort.postMessage({email: event.data.value.email, password: event.data.value.password});
 });
