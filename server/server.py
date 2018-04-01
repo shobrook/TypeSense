@@ -23,8 +23,8 @@ mongo = PyMongo(app)
 """
 DATA MODEL
 Collections: users, connections, conversations
-Users: {"_id": ObjectId(), "fbid": int(), "email": str(), "password_hash": str(), "connections": [ObjectId(), ...]}
-Connections: {"_id": ObjectId(), "fbid": str(), "conversations": [{"user_id": ObjectId(), "conversation_id": ObjectId()}, ...]}
+Users: {"_id": ObjectId(), "fb_id": int(), "email": str(), "password_hash": str(), "connections": [ObjectId(), ...]}
+Connections: {"_id": ObjectId(), "fb_id": str(), "conversations": [{"user_id": ObjectId(), "conversation_id": ObjectId()}, ...]}
 Conversations: {"_id": ObjectId(), "messages": [{"hash": str(), "sentiment": int(), "author": bool()}, ...]}
 """
 
@@ -101,8 +101,8 @@ def main():
 @app.route("/TypeSense/api/create_user", methods=["POST"])
 def create_user():
 	"""Creates a new user document; also checks if email already exists. Payload
-    format: {'email': str(), 'password': str(), 'fbid': str()}."""
-	if not request.json or not "email" and "password" and "fbid" in request.json:
+    format: {'email': str(), 'password': str(), 'fb_id': str()}."""
+	if not request.json or not "email" and "password" and "fb_id" in request.json:
 		abort(400, "new_user(): request.json does not exist or does not contain requisites")
 
 	# Make sure the email doesn't already correspond to an account.
@@ -112,12 +112,14 @@ def create_user():
 
 	# https://flask-bcrypt.readthedocs.io/en/latest/
 	# Hash already hashed and salted pw again, and store that hash in Mongo
-	#double_pw_hash = bcrypt.generate_password_hash(request.json["password_hash"]).decode("utf-8")
+	#cdouble_pw_hash = bcrypt.generate_password_hash(request.json["password_hash"]).decode("utf-8")
+
+	print(request.json)
 
 	mongo.db.users.insert({
 		"email": request.json["email"],
 		"password": request.json["password"],
-		"fbid": request.json["fbid"],
+		"fb_id": request.json["fb_id"],
 		"connections": []
 	})
 
@@ -148,20 +150,23 @@ def validate_user():
 @app.route("/TypeSense/api/update_conversation", methods=["POST"])
 def update_conversation():
 	"""Handles new conversations and conversation updates (new messages). Returns sentiment scores
-	for the new conversation's most recent messages. Payload format: {'email': str(), 'fbid': str(),
+	for the new conversation's most recent messages. Payload format: {'email': str(), 'fb_id': str(),
 	'messages': [{'author': bool(), 'message': str()}, ...]}."""
-	if not request.json or not "fbid" in request.json:
-		abort(400, "new_connection(): request.json does not exist or does not contain 'fbid'")
+	if not request.json or not "fb_id" in request.json:
+		abort(400, "new_connection(): request.json does not exist or does not contain 'fb_id'")
 
 	user = mongo.db.users.find_one({"email": request.json["email"]})
 
 	for cxn in mongo.db.connections.find():
 		# Connection already exists
-		if cxn["fbid"] == request.json["fbid"]:
+		print("request.json[\"fb_id\"]", request.json["fb_id"])
+		print("cxn[\"fb_id\"]", cxn["fb_id"])
+
+		if cxn["fb_id"] == request.json["fb_id"]:
 			for user_cxn in user["connections"]:
 				# Connection has a conversation open with user
 				connection = mongo.db.connections.find_one({"_id": ObjectId(str(user_cxn))})
-				if connection["fbid"] == request.json["fbid"]:
+				if connection["fb_id"] == request.json["fb_id"]:
 					conversation = (mongo.db.conversations.find_one({"_id": connection["conversations"][str(user["_id"])]}))["messages"]
 					analyzed_messages = analyze_sentiment(request.json["messages"], conversation)
 
@@ -176,14 +181,14 @@ def update_conversation():
 			messages = analyze_sentiment(request.json["messages"], [])
 			conversation = mongo.db.conversations.insert({"messages": messages})
 			mongo.db.connections.update(
-				{"fbid": cxn["fbid"]},
+				{"fb_id": cxn["fb_id"]},
 				{"$push": {"conversations": {"user_id": ObjectId(str(user["_id"])), "conversation_id": ObjectId(str(conversation))}}}
 			)
-			connection = mongo.db.connections.find_one({"fbid": cxn["fbid"]})
+			connection = mongo.db.connections.find_one({"fb_id": cxn["fb_id"]})
 
 			# Updates user object
 			mongo.db.users.update(
-				{"fbid": user["fbid"]},
+				{"fb_id": user["fb_id"]},
 				{"$push": {"connections": ObjectId(str(connection["_id"]))}}
 			)
 
@@ -195,12 +200,12 @@ def update_conversation():
 	messages = analyze_sentiment(request.json["messages"], [])
 	conversation = mongo.db.conversations.insert({"messages": messages})
 	connection = mongo.db.connections.insert({
-		"fbid": request.json["fbid"],
+		"fb_id": request.json["fb_id"],
 		"conversations": [{"user_id": ObjectId(str(user["_id"])), "conversation_id": ObjectId(str(conversation))}]
 	})
 
 	mongo.db.users.update(
-		{"fbid": user["fbid"]},
+		{"fb_id": user["fb_id"]},
 		{"$push": {"connections": ObjectId(str(connection))}}
 	)
 
