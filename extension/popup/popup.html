@@ -1,25 +1,9 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../libraries/jquery-3.2.1.min.js"></script>
   </head>
   <body>
-
-    <div
-      class="fb-login-button"
-      data-width="200"
-      data-max-rows="1"
-      data-size="large"
-      data-button-type="login_with"
-      data-show-faces="false"
-      data-auto-logout-link="true"
-      data-use-continue-as="true">
-    </div>
-
-    <fb:login-button
-      scope="public_profile,email"
-      onlogin="checkLoginState();">
-    </fb:login-button>
-
     <div id="graph">
       <script src="../libraries/d3.v4.min.js"></script>
       <script src="popup.js"></script>

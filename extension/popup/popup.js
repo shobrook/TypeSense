@@ -1,21 +1,13 @@
 const popupPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "popup"});
 
-window.fbAsyncInit = function() {
-        FB.init({
-          appId            : '1905953259716133',
-          autoLogAppEvents : true,
-          xfbml            : true,
-          version          : 'v0.1'
-        });
-      };
+// function openIndex() {
+//  chrome.tabs.create({active: true, url: "https://www.facebook.com/dialog/oauth?client_id=1905953259716133&response_type=token&redirect_uri=https://www.facebook.com/connect/login_success.html"});
+// }
 
-     (function(d, s, id){
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) {return;}
-        js = d.createElement(s); js.id = id;
-        js.src = "https://connect.facebook.net/en_US/sdk.js";
-        fjs.parentNode.insertBefore(js, fjs);
-       }(document, 'script', 'facebook-jssdk'));
+// document.addEventListener('DOMContentLoaded', function() {
+//    document.getElementById("index_link").addEventListener("click", openIndex);
+// }
+
 
 const createGraph = (data) => {
 	var data = data.reverse();
@@ -33,15 +25,17 @@ const createGraph = (data) => {
 	height = 320;
 
 	// Add svg to
-	var svg = d3.select('#graph').append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+	var svg = d3.select('#graph')
+				.append('svg')
+				.attr('width', width + margin.left + margin.right)
+				.attr('height', height + margin.top + margin.bottom)
+				.append('g')
+				.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
 	// set the ranges
-	var y = d3.scaleBand()
-	.range([height, 0])
-	.padding(0.52);
+	var y = d3.scaleBand().range([height, 0]).padding(0.52);
 
-	var x = d3.scaleLinear()
-	.range([0, width]);
+	var x = d3.scaleLinear().range([0, width]);
 
 	// Scale the range of the data in the domains
 	x.domain(d3.extent(data, function (d) {
@@ -53,10 +47,11 @@ const createGraph = (data) => {
 
 	// append the rectangles for the bar chart
 	svg.selectAll(".bar")
-	.data(data)
-	.enter().append("rect")
-	.attr("class", function (d) {
-		return "bar bar--" + (d.sentiment < 0 ? "negative" : "positive");
+	   .data(data)
+	   .enter()
+	   .append("rect")
+	   .attr("class", function (d) {
+			return "bar bar--" + (d.sentiment < 0 ? "negative" : "positive");
 	})
 	.attr("x", function (d) {
 		return x(Math.min(7, d.sentiment * 0.5));
@@ -91,22 +86,22 @@ const createGraph = (data) => {
 	.attr("rx", "1.5px");
 
 	svg.append("line")
-	.attr("x1", (width / 2))
-	.attr("y1", 0)
-	.attr("x2", (width / 2))
-	.attr("y2", height)
-	.style("stroke-width", 2)
-	.style("stroke", "#F1F0F0")
-	.style("fill", "1");
+	   .attr("x1", (width / 2))
+	   .attr("y1", 0)
+	   .attr("x2", (width / 2))
+	   .attr("y2", height)
+	   .style("stroke-width", 2)
+	   .style("stroke", "#F1F0F0")
+	   .style("fill", "1");
 
 	svg.append("line")
-	.attr("x1", 0)
-	.attr("y1", height - 1)
-	.attr("x2", width)
-	.attr("y2", height - 1)
-	.style("stroke-width", 2)
-	.style("stroke", "#F1F0F0")
-	.style("fill", "1");
+	   .attr("x1", 0)
+	   .attr("y1", height - 1)
+	   .attr("x2", width)
+	   .attr("y2", height - 1)
+	   .style("stroke-width", 2)
+	   .style("stroke", "#F1F0F0")
+	   .style("fill", "1");
 }
 
 chrome.storage.local.get("signed-up", (signup) => {
@@ -118,7 +113,7 @@ chrome.storage.local.get("signed-up", (signup) => {
 			console.log(data["data"]["messages"]);
 			createGraph(data["data"]["messages"]);
 		});
-	} else { // Tells background.js that the browser action was clicked
-		popupPort.postMessage({browser_action_clicked: true});
+	} else {
+		popupPort.postMessage({browser_action_clicked: true}); // Tells background.js that the browser action was clicked
 	}
 });
