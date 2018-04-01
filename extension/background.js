@@ -42,7 +42,7 @@ const MESSAGE = (content) => {
 }
 
 // NOTE: Set to "true" for testing only
-storage.set({"signed-up": true}, function() {
+storage.set({"signed-up": false}, function() {
 	console.log("Signed-up is set to true.");
 });
 
@@ -81,7 +81,7 @@ chrome.runtime.onConnect.addListener((port) => {
 			let addUser = (user) => {
 				if (JSON.parse(user).registered) { // Successful registration
 					console.log("Email is valid. Registering user.");
-
+					// TODO: FFS
 					storage.set({"credentials": {"email": msg.email, "password": msg.password}}, () => {
 						port.postMessage({type: "registered", value: true});
 						storage.set({"onboarding": true}, () => {
@@ -92,15 +92,15 @@ chrome.runtime.onConnect.addListener((port) => {
 						});
 
 						MESSAGE({"message": "first-signup"}); // Tells onboarding.js to prompt the onboarding dialog
+						console.log("Listeners injected.")
+						MESSAGE({"message": "inject-listeners"}); // Tells listeners.js to inject event listeners
 					});
-
-					MESSAGE({"message": "inject-listeners"}); // Tells listeners.js to inject event listeners
 				} else { // Unsuccessful registration
 					console.log("Email is already in use. Try again.");
 					port.postMessage({type: "registered", value: false});
 				}
 			}
-			POST(CREATE_USER, {"email": msg.email, "fbid": msg.fbid, "password": msg.password}, addUser);
+			POST(CREATE_USER, {"email": msg.email, "fb_id": msg.fb_id, "password": msg.password}, addUser);
 		} else if (port.name == "login") { // Handles requests from the "login" port (registration.js)
 			let validateUser = (user) => {
 				if (JSON.parse(user).logged_in) { // Successful validation
@@ -128,7 +128,7 @@ chrome.runtime.onConnect.addListener((port) => {
 				MESSAGE({"message": "conversation-update", "messages": JSON.parse(messages)}); // Tells popup.js to update the graph
 			}
 			storage.get("credentials", (creds) => {
-				POST(UPDATE_CONVERSATION, {"email": creds["credentials"]["email"], "fbid": "test"/*msg.fbid*/, "messages": msg.messages}, updateConversation);
+				POST(UPDATE_CONVERSATION, {"email": creds["credentials"]["email"], "fb_id": "test"/*msg.fb_id*/, "messages": msg.messages}, updateConversation);
 			});
 		} else if (port.name == "popup") {
 			if (msg.browser_action_clicked)
