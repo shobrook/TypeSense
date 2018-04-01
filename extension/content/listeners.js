@@ -11,8 +11,9 @@ const eventListeners = (getFBID) => {
 				if (message) {
 					let map = message.children[1].children[0].getAttribute("participants");
 
+					// TODO: Only return if map has two instances of "fbid"
 					if (map != null)
-						return int(map.split("\"fbid:")[1].split("\"")[0]);
+						return (map.split("\"fbid:")[1].split("\"")[0]).toString();
 				}
 			});
 		});
