@@ -41,9 +41,9 @@ const MESSAGE = (content) => {
 	});
 }
 
-// NOTE: Set to "false" for testing only
-storage.set({"signed-up": false}, function() {
-	console.log("Signed-up is set to false.");
+// NOTE: Set to "true" for testing only
+storage.set({"signed-up": true}, function() {
+	console.log("Signed-up is set to true.");
 });
 
 
