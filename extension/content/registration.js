@@ -328,16 +328,19 @@ const registerPayload = function() {
 
 	// Pulls the current user's Facebook ID
 	const getUserID = () => {
+		console.log("getUserID called");
 	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
 		Array.from(messageList).forEach(function(messageNode) {
 			Array.from(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
 				if (message) {
 					let map = message.children[1].children[0].getAttribute("participants");
 
+					console.log("MAP", map);
 					// TODO: Only return if map has two instances of "fb_id"
-					if (map != null)
-						console.log(map.split("\"fb_id:")[2]);
+					if (map != null) {
+						console.log("MAP", map);
 						return (map.split("\"fb_id:")[2].split("\"")[0]).toString();
+					}
 				}
 			});
 		});

@@ -5,15 +5,18 @@ const listenerPort = chrome.runtime.connect(window.localStorage.getItem('typesen
 const eventListeners = () => {
 	// Pulls the current recipient's Facebook ID
 	const getRecipientID = () => {
+		console.log("getRecipientID called");
 	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
 		Array.from(messageList).forEach((messageNode) => {
 			Array.from(messageNode.getElementsByClassName("_41ud")).forEach((message) => {
 				if (message) {
 					let map = message.children[1].children[0].getAttribute("participants");
-
+					console.log("MAP", map);
 					// TODO: Only return if map has two instances of "fb_id"
-					if (map != null)
+					if (map != null) {
+						console.log("MAP", map);
 						return (map.split("\"fb_id:")[1].split("\"")[0]).toString();
+					}
 				}
 			});
 		});

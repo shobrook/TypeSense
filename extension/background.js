@@ -43,7 +43,7 @@ const MESSAGE = (content) => {
 
 // NOTE: Set to "true" for testing only
 storage.set({"signed-up": false}, function() {
-	console.log("Signed-up is set to true.");
+	console.log("Signed-up is set to false.");
 });
 
 
@@ -81,7 +81,7 @@ chrome.runtime.onConnect.addListener((port) => {
 			let addUser = (user) => {
 				if (JSON.parse(user).registered) { // Successful registration
 					console.log("Email is valid. Registering user.");
-					// TODO: FFS
+					// TODO: FFS, fix this.
 					storage.set({"credentials": {"email": msg.email, "password": msg.password}}, () => {
 						port.postMessage({type: "registered", value: true});
 						storage.set({"onboarding": true}, () => {
