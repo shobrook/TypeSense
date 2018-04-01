@@ -30,7 +30,13 @@
       "http://www.messenger.com/*",
       "https://www.messenger.com/*"
     ],
-    "js": ["extension/libraries/jquery-3.2.1.min.js", "extension/libraries/d3.v4.min.js", "extension/content/registration.js", "extension/content/onboarding.js", "extension/content/listeners.js"],
+    "js": [
+      "extension/libraries/jquery-3.2.1.min.js",
+      "extension/libraries/d3.v4.min.js",
+      "extension/content/registration.js",
+      "extension/content/onboarding.js",
+      "extension/content/listeners.js"
+    ],
     "run_at": "document_end"
   }]
 }
