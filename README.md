@@ -1,5 +1,4 @@
-## TypeSense
----
+![Logo](assets/logo.png)
 
 TypeSense is a Chrome extension that displays the sentiment impact of each message in a Facebook Messenger conversation in real-time. Winner of the best Healthcare-related OSS hack at HackIllinois 2018.
 
