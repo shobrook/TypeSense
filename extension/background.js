@@ -33,11 +33,6 @@ const POST = (url, payload, callback) => {
 	xhr.send(JSON.stringify(payload));
 }
 
-/*
-// Hashes a password with the salt being the user's email address
-const HASH = (email, password) => dcodeIO.bcrypt.hashSync(password, GET(GET_SALT, {"email": email}));
-*/
-
 // Sends a message to content scripts running in the current tab
 const MESSAGE = (content) => {
 	chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
@@ -46,9 +41,9 @@ const MESSAGE = (content) => {
 	});
 }
 
-// NOTE: Set to "false" for testing only
-storage.set({"signed-up": false}, function() {
-	console.log("Signed-up is set to false.");
+// NOTE: Set to "true" for testing only
+storage.set({"signed-up": true}, function() {
+	console.log("Signed-up is set to true.");
 });
 
 
