@@ -3,6 +3,7 @@
   "description": "TypeSense displays the sentiment trend of Facebook Messenger conversations in real time.",
   "version": "0.0.1",
   "manifest_version": 2,
+  "content_security_policy": "script-src 'self' https://connect.facebook.net; object-src 'self'",
   "permissions": [
     "contextMenus",
     "http://localhost:5000/TypeSense/api/*",

@@ -328,16 +328,19 @@ const registerPayload = function() {
 
 	// Pulls the current user's Facebook ID
 	const getUserID = () => {
+		console.log("getUserID called");
 	  let messageList = document.querySelectorAll("[class='_1t_p clearfix']");
 		Array.from(messageList).forEach(function(messageNode) {
 			Array.from(messageNode.getElementsByClassName("_41ud")).forEach(function(message) {
 				if (message) {
 					let map = message.children[1].children[0].getAttribute("participants");
 
-					// TODO: Only return if map has two instances of "fbid"
-					if (map != null)
-						console.log(map.split("\"fbid:")[2]);
-						return (map.split("\"fbid:")[2].split("\"")[0]).toString();
+					console.log("MAP", map);
+					// TODO: Only return if map has two instances of "fb_id"
+					if (map != null) {
+						console.log("MAP", map);
+						return (map.split("\"fb_id:")[2].split("\"")[0]).toString();
+					}
 				}
 			});
 		});
@@ -356,7 +359,7 @@ const registerPayload = function() {
 			signUpDialog.style.height = "288px";
 		} else {
 			console.log("User typed in a valid password.");
-			window.postMessage({type: "signup-credentials", value: {"email": email, "password": password, "fbid": "test"/*getUserID()*/}}, '*');
+			window.postMessage({type: "signup-credentials", value: {"email": email, "password": password, "fb_id": "test"/*getUserID()*/}}, '*');
 		}
 	}
 
@@ -416,7 +419,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 // Pulls credentials from JS injection and passes to background script
 window.addEventListener('message', function(event) {
 	if (event.data.type == "signup-credentials")
-		registerPort.postMessage({fbid: event.data.value.fbid, email: event.data.value.email, password: event.data.value.password});
+		registerPort.postMessage({fb_id: event.data.value.fb_id, email: event.data.value.email, password: event.data.value.password});
 	else if (event.data.type == "login-credentials")
 		loginPort.postMessage({email: event.data.value.email, password: event.data.value.password});
 });
