@@ -4,7 +4,7 @@
 
 ### Purpose
 
-TypeSense is a chrome extension that tracks and plots a Facebook Messenger conversation's sentiment in real-time, designed to help the developmentally disabled. Winner of the best Healthcare-related OSS hack at HackIllinois 2018.
+TypeSense is a chrome extension that analyzes and displays a Facebook Messenger conversation's sentiment in real-time, designed to help the developmentally disabled. Winner of the best Healthcare-related OSS hack at `HackIllinois 2018`.
 
 <!--Demo gif goes here-->
 
@@ -22,10 +22,22 @@ TypeSense makes it a little easier for those with developmental disorders, like 
 
 ## Features
 
-+ Visualization of the conversation's sentiment over time
-+ See how each message impacted the overall sentiment
-+ Predict the impact of messages on the conversation's sentiment before sending them
+* Visualization of the conversation's sentiment over time
+* See how each message impacted the overall sentiment
+* Predict the impact of messages on the conversation's sentiment before sending them
 
 ## Contributing
 
-To make a contribution, fork the repo, make your changes and then submit a pull request. If you've discovered a bug or have a feature request, create an [issue](https://github.com/shobrook/TypeSense/issues/new) and tag it appropriately :)
+To make a contribution, fork the repo, make your changes and then submit a pull request. If you've discovered a bug or have a feature request, create an [issue](https://github.com/shobrook/TypeSense/issues/new) and we'll take care of it! :)
+
+## Development Team
+
+Developed and maintained by [Jon Shobrook](https://github.com/shobrook) and [Aaron Lichtman](https://github.com/alichtman).
+
+**Prototyped at HackIllinois by:**
+
+* [Aaron Lichtman](https://github.com/alichtman)
+* [Adam Gernz](https://github.com/agernz)
+* [Jon Shobrook](https://github.com/shobrook)
+* [Rishi Masand](https://github.com/darthbatman)
+
