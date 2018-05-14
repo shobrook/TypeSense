@@ -29,7 +29,7 @@ const message = (content) => {
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
 	// TODO: Require VADER-js
-	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "author": "...", "sentiment": 0}, ...]
+	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 	return [
 		{"message": "", "received": true, "sentiment": .25},
 		{"message": "", "received": true, "sentiment": .25},
@@ -50,7 +50,7 @@ const analyzeSentiment = (messages) => {
 		{"message": "", "received": true, "sentiment": .25},
 		{"message": "", "received": true, "sentiment": .25},
 		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": false, "sentiment": -.50}
+		{"message": "", "received": false, "sentiment": -.40}
 	] // TEMP
 }
 
@@ -81,9 +81,17 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.runtime.onConnect.addListener((port) => {
 	port.onMessage.addListener((msg) => {
 		if (port.name == "listener") { // Handles requests from listeners.js
-			storage.set({"currentThread": analyzeSentiment(msg.messages)}, () => { // TODO: Memoize conversations
+			let sentimentTable = analyzeSentiment(msg.messages);
+
+			storage.set({"currentThread": sentimentTable}, () => { // TODO: Memoize conversations
 				console.log("Populated conversation's sentiment table.");
 			});
+
+			// Updates the browser action icon according to sentiment change
+			if (sentimentTable[sentimentTable.length - 1]["sentiment"] >= sentimentTable[sentimentTable.length - 2]["sentiment"]) // Sentiment increased
+				chrome.browserAction.setIcon({path: "../assets/icon_green.png"});
+			else // Sentiment decreased
+				chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
 		}
 	});
 });
