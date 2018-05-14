@@ -1,8 +1,9 @@
 /* Globals */
 
 
-const listenerPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "listener"});
+const listenerPort = chrome.runtime.connect(window.localStorage.getItem("typesense-id"), {name: "listener"});
 const eventListeners = () => {
+	/*
 	// Pulls the current recipient's Facebook ID
 	const getRecipientID = () => {
 		console.log("getRecipientID called");
@@ -22,36 +23,21 @@ const eventListeners = () => {
 		});
 		console.log("Got Facebook ID.");
 	}
+	*/
 
-	// Scrapes the last 23 messages in the current conversation
+	const getThreadID = () => {
+		// TODO: Pull the the thread ID from the current URL
+		return "temporaryId";
+	}
+
+	// Scrapes the last 23 messages in the current conversation (in chronological order)
 	const scrapeMessages = () => {
 		let scrapedMessages = [];
 
-		let containerNode = document.getElementsByClassName('__i_')[0];
-		Array.from(containerNode.childNodes).forEach((child) => {
-			if (child.tagName == 'DIV' && child.id.length > 0) {
-				Array.from(child.childNodes).forEach((c) => {
-					if (c.tagName == 'DIV') {
-						let msgWrapperNodes = c.childNodes[0].getElementsByClassName('clearfix');
-
-						for (let i = 0; i < msgWrapperNodes.length; i++) {
-							let msgNode = msgWrapperNodes[i].childNodes[0].childNodes[0];
-
-							// Passes if message has rich media content
-							if (msgNode == undefined || msgNode == null)
-								continue;
-
-							// TODO: Check for emojis
-
-							let author = true;
-							if (window.getComputedStyle(msgWrapperNodes[i].childNodes[0], null).getPropertyValue("background-color") == "rgb(241, 240, 240)")
-								author = false;
-
-							scrapedMessages.push({"author": author, "message": msgNode.textContent});
-						}
-					}
-				});
-			}
+		let messageNodes = document.getElementsByClassName("_3058 _ui9 _hh7 _s1- _52mr _3oh-"); // BUG: Doesn't include emojis
+		Array.from(messageNodes).forEach((node) => {
+			let received = node.getAttribute("customcolor") == '' ? true : false;
+			scrapedMessages.push({"received": received, "message": node.getAttribute("body")});
 		});
 
 		console.log("Scraped all loaded messages.");
@@ -63,9 +49,9 @@ const eventListeners = () => {
 	}
 
 	// Listens for a new message
-	document.getElementById("js_1").addEventListener('DOMNodeInserted', (event) => {
+	document.getElementById("js_1").addEventListener("DOMNodeInserted", (event) => {
     if (event.target.parentNode.id == "js_1") {
-			window.postMessage({type: "event-notifications", value: {"fb_id": getRecipientID(), "messages": scrapeMessages()}}, '*');
+			window.postMessage({type: "eventNotifications", value: {"threadID": getThreadID(), "messages": scrapeMessages()}}, '*');
     }
 	}, false);
 
@@ -73,17 +59,17 @@ const eventListeners = () => {
 	var oldLocation = location.href;
 	setInterval(function() {
 		if (location.href != oldLocation) {
-			// TODO: Detect non-convo URLs
-			window.postMessage({type: "event-notifications", value: {"fb_id": getRecipientID(), "messages": scrapeMessages()}}, '*');
+			// TODO: Handle changes to non-convo URLs (or the same URL but a change from thread ID to FB username)
+			window.postMessage({type: "eventNotifications", value: {"threadID": getThreadID(), "messages": scrapeMessages()}}, '*');
 			oldLocation = location.href;
 		}
 	}, 100);
 
-	window.postMessage({type: "event-notifications", value: {"fb_id": getRecipientID(), "messages": scrapeMessages()}}, '*');
+	window.postMessage({type: "eventNotifications", value: {"threadID": getThreadID(), "messages": scrapeMessages()}}, '*');
 }
 
 // Prepares the JS injection
-const listenerInject = () => {
+const injectListeners = () => {
 	var script = document.createElement("script");
 	script.textContent = "(" + eventListeners.toString() + ")();";
 	document.head.appendChild(script);
@@ -93,16 +79,16 @@ const listenerInject = () => {
 /* Main */
 
 
-// Listens for the "inject-listeners" event from the background script
+// Listens for the "injectListeners" event from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	if (request.message == "inject-listeners") {
-		console.log("User has loaded messenger, or just signed-up/logged-in.");
-		listenerInject();
+	if (request.message == "injectListeners") {
+		console.log("User has loaded messenger.");
+		injectListeners();
 	}
 });
 
 // Pulls scraped messages from JS injection and passes to background script
 window.addEventListener("message", (event) => {
-	if (event.data.type == "event-notifications")
-		listenerPort.postMessage({fb_id: event.data.value.fb_id, messages: event.data.value.messages});
+	if (event.data.type == "eventNotifications")
+		listenerPort.postMessage({threadID: event.data.value.threadID, messages: event.data.value.messages});
 });

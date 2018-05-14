@@ -1,15 +1,5 @@
-const popupPort = chrome.runtime.connect(window.localStorage.getItem('typesense-id'), {name: "popup"});
-
 const createGraph = (data) => {
-	var data = data.reverse();
-
-	// Listens for the "conversation-update" event from the background script
-	chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-		if (request.message == "conversation-update") {
-			console.log("A new message was received or a conversation was changed.");
-			data = (request.messages).reverse();
-		}
-	});
+	//var data = data.reverse();
 
 	var margin = {top: 0, right: 0, bottom: 0, left: 0},
 	width = 400;
@@ -54,7 +44,7 @@ const createGraph = (data) => {
 		return Math.abs(x(d.sentiment * 0.55) - x(0));
 	})
 	.attr("fill", function(d) {
-		if (d.author) {
+		if (d.received) {
 			if (d.sentiment < 0) {
 				return "#ff5e66";
 			} else {
@@ -95,16 +85,7 @@ const createGraph = (data) => {
 	   .style("fill", "1");
 }
 
-chrome.storage.local.get("signed-up", (signup) => {
-	if (signup["signed-up"]) {
-		chrome.storage.local.get("data", (data) => {
-			console.log(data["data"]);
-			console.log(data["data"].messages);
-			console.log((data["data"])["messages"]);
-			console.log(data["data"]["messages"]);
-			createGraph(data["data"]["messages"]);
-		});
-	} else {
-		popupPort.postMessage({browser_action_clicked: true}); // Tells background.js that the browser action was clicked
-	}
+chrome.storage.local.get("currentThread", (sentimentTable) => {
+	console.log(sentimentTable); // TEMP
+	createGraph(Array.from(sentimentTable));
 });
