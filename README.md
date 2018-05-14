@@ -1,56 +1,42 @@
-## TypeSense
----
+![Logo](assets/logo.png)
 
-TypeSense is a Chrome extension that displays the sentiment impact of each message in a Facebook Messenger conversation in real-time. Winner of the best Healthcare-related OSS hack at HackIllinois 2018.
+<!--Badges go here-->
 
-##### Why?
----
+### Purpose
 
-Conversations can be complicated. With an increasing reliance on digital communication, the body language and intonation cues we use to interpret meaning in someone’s words quickly disappear. People without psychological disorders misunderstand each other all the time. Sarcasm makes it hard to know for sure what someone means, and idioms are confusing! _Imagine how hard it is for people with social difficulties._
+TypeSense is a chrome extension that analyzes and displays a Facebook Messenger conversation's sentiment in real-time, designed to help the developmentally disabled. Winner of the best Healthcare-related OSS hack at `HackIllinois 2018`.
 
-[TypeSense serves to simplify social interaction? help people respond appropriately to incoming messages? idk someone help ]
+<!--Demo gif goes here-->
 
-Designed to help users with pervasive developmental disorders, like Aspergers or Autism.
+### Installation
 
+TypeSense will soon be published in the Chrome Web Store. Stay tuned!
 
-##### Project Features
----
+<!--Once installed, TypeSense requires no further setup. Just open a conversation and click the TypeSense icon to graph its sentiment.-->
 
-+ Visualization of the impact of each message on conversation sentiment
-+ Seamless integration with Messenger in Chrome
-+ Intuitive, simple interface.
-+ Preview impact of messages on conversation sentiment before they're sent
+## Why?
 
+Conversations can be ambiguous. They're even more ambiguous online, where the body language and intonation cues that usually help us interpret meaning are lost. People without neurological disorders misunderstand each other all the time – sarcasm makes it hard to know for sure what someone means, and idioms are confusing! _Imagine how hard it must be for people with social disabilities._
 
-##### Usage
----
+TypeSense makes it a little easier for those with developmental disorders, like aspergers or autism, to understand the emotions of others when chatting online.
 
-1. Download a `.zip` of the repo and unzip it
-2. Open Chrome and enter `chrome://extensions` into the address bar
-4. Enable `Developer Mode`
-5. Click `Load Unpacked Extension` and select extracted folder
-6. Make sure `TypeSense` is enabled
-7. Navigate to www.messenger.com and click the TypeSense extension button
+## Features
 
+* Visualization of the conversation's sentiment over time
+* See how each message impacted the overall sentiment
+* Predict the impact of messages on the conversation's sentiment before sending them
 
-##### How to Contribute
----
+## Contributing
 
-1. Clone the repo
-2. Create a new branch: `$ git checkout https://github.com/shobrook/TypeSense -b [name_for_new_branch]`.
-3. Open Github Issue detailing the feature/bug/improvement
-4. Write code, test, and open a Pull Request with comprehensive description of changes
+To make a contribution, fork the repo, make your changes and then submit a pull request. If you've discovered a bug or have a feature request, create an [issue](https://github.com/shobrook/TypeSense/issues/new) and we'll take care of it! :)
 
+## Development Team
 
-##### Made By
----
+Developed and maintained by [Jonathan Shobrook](https://github.com/shobrook) and [Aaron Lichtman](https://github.com/alichtman).
 
-+ Aaron Lichtman
-+ Adam Gernes
-+ Jonathan Shobrook
-+ Rishi Masand
+**Prototyped at HackIllinois by:**
 
-#### License
----
-
-MIT
+* [Aaron Lichtman](https://github.com/alichtman)
+* [Adam Gernz](https://github.com/agernz)
+* [Jon Shobrook](https://github.com/shobrook)
+* [Rishi Masand](https://github.com/darthbatman)
