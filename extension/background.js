@@ -30,6 +30,28 @@ const message = (content) => {
 const analyzeSentiment = (messages) => {
 	// TODO: Require VADER-js
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "author": "...", "sentiment": 0}, ...]
+	return [
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": false, "sentiment": -.50},
+		{"message": "", "received": false, "sentiment": -.50},
+		{"message": "", "received": false, "sentiment": -.50},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": false, "sentiment": -.50},
+		{"message": "", "received": false, "sentiment": -.50},
+		{"message": "", "received": false, "sentiment": -.50},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": true, "sentiment": .25},
+		{"message": "", "received": false, "sentiment": -.50},
+		{"message": "", "received": false, "sentiment": -.50}
+	] // TEMP
 }
 
 
@@ -39,7 +61,7 @@ const analyzeSentiment = (messages) => {
 // Listens for messenger.com to be loaded and sends "inject-listeners" to listeners.js
 chrome.webNavigation.onCompleted.addListener((details) => {
 	if (details.url.includes("messenger.com")) {
-		MESSAGE({"message": "injectListeners"}); // Tells listeners.js to inject event listeners
+		message({"message": "injectListeners"}); // Tells listeners.js to inject event listeners
 	}
 });
 
@@ -59,14 +81,8 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.runtime.onConnect.addListener((port) => {
 	port.onMessage.addListener((msg) => {
 		if (port.name == "listener") { // Handles requests from listeners.js
-		 	let updateConversation = (messages) => {
-				storage.set({"sentimentTable": messages}, () => {
-					console.log("Populated local data storage.");
-				});
-				MESSAGE({"message": "conversationUpdate", "messages": JSON.parse(messages)}); // Tells popup.js to update the graph
-			}
-			storage.get("credentials", (creds) => {
-				POST(UPDATE_CONVERSATION, {"email": creds["credentials"]["email"], "fb_id": "test"/*msg.fb_id*/, "messages": msg.messages}, updateConversation);
+			storage.set({"currentThread": analyzeSentiment(msg.messages)}, () => { // TODO: Memoize conversations
+				console.log("Populated conversation's sentiment table.");
 			});
 		}
 	});
