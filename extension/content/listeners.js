@@ -25,7 +25,10 @@ const eventListeners = () => {
 	}
 	*/
 
-	// TODO: Pull the the thread ID from the current URL
+	const getThreadID = () => {
+		// TODO: Pull the the thread ID from the current URL
+		return "temporaryId";
+	}
 
 	// Scrapes the last 23 messages in the current conversation (in chronological order)
 	const scrapeMessages = () => {
