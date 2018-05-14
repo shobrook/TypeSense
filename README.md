@@ -18,7 +18,7 @@ TypeSense will soon be published in the Chrome Web Store. Stay tuned!
 
 Conversations can be ambiguous. They're even more ambiguous online, where the body language and intonation cues that usually help us interpret meaning are lost. People without neurological disorders misunderstand each other all the time – sarcasm makes it hard to know for sure what someone means, and idioms are confusing! _Imagine how hard it must be for people with social disabilities._
 
-TypeSense makes it a little easier for those with developmental disorders, like aspergers or autism, to better understand the emotions of others when chatting online.
+TypeSense makes it a little easier for those with developmental disorders, like aspergers or autism, to understand the emotions of others when chatting online.
 
 ## Features
 
@@ -32,7 +32,7 @@ To make a contribution, fork the repo, make your changes and then submit a pull 
 
 ## Development Team
 
-Developed and maintained by [Jon Shobrook](https://github.com/shobrook) and [Aaron Lichtman](https://github.com/alichtman).
+Developed and maintained by [Jonathan Shobrook](https://github.com/shobrook) and [Aaron Lichtman](https://github.com/alichtman).
 
 **Prototyped at HackIllinois by:**
 
@@ -40,4 +40,3 @@ Developed and maintained by [Jon Shobrook](https://github.com/shobrook) and [Aar
 * [Adam Gernz](https://github.com/agernz)
 * [Jon Shobrook](https://github.com/shobrook)
 * [Rishi Masand](https://github.com/darthbatman)
-
