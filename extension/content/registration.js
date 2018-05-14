@@ -78,177 +78,177 @@ const registerPayload = function() {
 
 	// Assigns CSS to the signup form and tabs
 	document.getElementsByTagName('style')[0].innerHTML = `#typesenseHeader {
-																												  background-color: #2C9ED4;
-																												  position: relative;
-																												  height: 42px;
-																												  margin-top: -19px;
-																												  border-radius: 10px 10px 0px 0px;
-																												}
+															  background-color: #2C9ED4;
+															  position: relative;
+															  height: 42px;
+															  margin-top: -19px;
+															  border-radius: 10px 10px 0px 0px;
+															}
 
-																												#typesenseWordmark {
-																												  position: relative;
-																												  height: 16px;
-																												  margin-top: 12px;
-																												  margin-left: 30px;
-																												  pointer-events: none;
-																												}
+															#typesenseWordmark {
+															  position: relative;
+															  height: 16px;
+															  margin-top: 12px;
+															  margin-left: 30px;
+															  pointer-events: none;
+															}
 
-																												#registerExit {
-																												  position: relative;
-																												  height: 15px;
-																												  margin-left: 402px;
-																												  cursor: pointer;
-																												}
+															#registerExit {
+															  position: relative;
+															  height: 15px;
+															  margin-left: 402px;
+															  cursor: pointer;
+															}
 
-																												#dialogTabsWrapper {
-																												  overflow-x: hidden;
-																												  padding-bottom: 10px;
-																												}
+															#dialogTabsWrapper {
+															  overflow-x: hidden;
+															  padding-bottom: 10px;
+															}
 
-																												.dialogTabs {
-																													height: 60px;
-																												  font-family: Helvetica;
-																												  overflow: hidden;
-																												  box-shadow: 0px 1px 3px #D9D9D9;
-																												}
+															.dialogTabs {
+															  height: 60px;
+															  font-family: Helvetica;
+															  overflow: hidden;
+															  box-shadow: 0px 1px 3px #D9D9D9;
+															}
 
-																												#signUpTab {
-																												  display: block;
-																												  float: left;
-																												  width: 298px;
-																												  padding: 1.75em 0;
-																												  font-size: 13px;
-																												  font-weight: 600;
-																												  color: #2C9ED4;
-																												  text-align: center;
-																												  cursor: pointer;
-																												}
+															#signUpTab {
+															  display: block;
+															  float: left;
+															  width: 298px;
+															  padding: 1.75em 0;
+															  font-size: 13px;
+															  font-weight: 600;
+															  color: #2C9ED4;
+															  text-align: center;
+															  cursor: pointer;
+															}
 
-																												#loginTab {
-																												  display: block;
-																												  float: left;
-																												  width: 180px;
-																												  padding: 1.75em 0;
-																												  font-size: 13px;
-																												  font-weight: 600;
-																												  color: rgb(195,208,225);
-																												  text-align: center;
-																												  cursor: pointer;
-																												}
+															#loginTab {
+															  display: block;
+															  float: left;
+															  width: 180px;
+															  padding: 1.75em 0;
+															  font-size: 13px;
+															  font-weight: 600;
+															  color: rgb(195,208,225);
+															  text-align: center;
+															  cursor: pointer;
+															}
 
-																												#signUpTab:hover {
-																												  color: #2C9ED4;
-																												}
+															#signUpTab:hover {
+															  color: #2C9ED4;
+															}
 
-																												#loginTab:hover {
-																												  color: #2C9ED4;
-																												}
+															#loginTab:hover {
+															  color: #2C9ED4;
+															}
 
-																												#selector {
-																												  background-color: #2C9ED4;
-																												  height: 1px;
-																												  width: 239px;
-																												  margin-top: -11px;
-																												  margin-left: 30px;
-																												  border: none;
-																												  transition: .2s;
-																												}
+															#selector {
+															  background-color: #2C9ED4;
+															  height: 1px;
+															  width: 239px;
+															  margin-top: -11px;
+															  margin-left: 30px;
+															  border: none;
+															  transition: .2s;
+															}
 
-																												#tabContent {
-																												  position: relative;
-																												  top: 20px;
-																												  left: 30px;
-																												}
+															#tabContent {
+															  position: relative;
+															  top: 20px;
+															  left: 30px;
+															}
 
-																												.inputFields {
-																												  display: inline-block;
-																												  box-sizing: border-box;
-																												  width: 478px;
-																												  height: 42px;
-																												  padding: 20px;
-																												  outline: none;
-																												  margin: 0 0 15px 0px;
-																												  border: none;
-																												  border-radius: 1px;
-																												  box-shadow: 0px 1px 3px #D9D9D9;
-																												  font-family: Helvetica;
-																												  font-weight: 400;
-																												  font-size: 13px;
-																												  color: #7D858E;
-																												}
+															.inputFields {
+															  display: inline-block;
+															  box-sizing: border-box;
+															  width: 478px;
+															  height: 42px;
+															  padding: 20px;
+															  outline: none;
+															  margin: 0 0 15px 0px;
+															  border: none;
+															  border-radius: 1px;
+															  box-shadow: 0px 1px 3px #D9D9D9;
+															  font-family: Helvetica;
+															  font-weight: 400;
+															  font-size: 13px;
+															  color: #7D858E;
+															}
 
-																												#typesenseEmail::-webkit-input-placeholder {
-																												  color: #CDD8E6;
-																												}
+															#typesenseEmail::-webkit-input-placeholder {
+															  color: #CDD8E6;
+															}
 
-																												#typesensePass::-webkit-input-placeholder {
-																												  color: #CDD8E6;
-																												}
+															#typesensePass::-webkit-input-placeholder {
+															  color: #CDD8E6;
+															}
 
-																												#passwordHelpText {
-																												  display: inline-block;
-																												  position: relative;
-																												  top: -53px;
-																												  font-family: Helvetica;
-																												  font-weight: 500;
-																												  font-size: 11px;
-																												  color: #CDD8E6;
-																												}
+															#passwordHelpText {
+															  display: inline-block;
+															  position: relative;
+															  top: -53px;
+															  font-family: Helvetica;
+															  font-weight: 500;
+															  font-size: 11px;
+															  color: #CDD8E6;
+															}
 
-																												#forgotYourPassword {
-																												  display: inline-block;
-																												  position: relative;
-																												  top: -53px;
-																												  font-family: Helvetica;
-																												  font-weight: 500;
-																												  font-size: 11px;
-																												  color: #2C9ED4;
-																												  text-decoration: underline;
-																												  cursor: pointer;
-																												}
+															#forgotYourPassword {
+															  display: inline-block;
+															  position: relative;
+															  top: -53px;
+															  font-family: Helvetica;
+															  font-weight: 500;
+															  font-size: 11px;
+															  color: #2C9ED4;
+															  text-decoration: underline;
+															  cursor: pointer;
+															}
 
-																												.signUpLoginButton {
-																												  display: inline-block;
-																												  float: left;
-																												  position: relative;
-																												  background-color: #2C9ED4;
-																												  text-align: center;
-																												  width: 135px;
-																												  height: 42px;
-																												  border: none;
-																												  color: #FFFFFF;
-																												  font-family: Helvetica;
-																												  font-weight: 600;
-																												  font-size: 13px;
-																												  cursor: pointer;
-																												  border-radius: 10px 1px 10px 1px;
-																												  margin-left: 343px;
-																												  margin-top: 0px;
-																												  overflow: hidden;
-																												  border: none;
-																												  outline: none;
-																												}
+															.signUpLoginButton {
+															  display: inline-block;
+															  float: left;
+															  position: relative;
+															  background-color: #2C9ED4;
+															  text-align: center;
+															  width: 135px;
+															  height: 42px;
+															  border: none;
+															  color: #FFFFFF;
+															  font-family: Helvetica;
+															  font-weight: 600;
+															  font-size: 13px;
+															  cursor: pointer;
+															  border-radius: 10px 1px 10px 1px;
+															  margin-left: 343px;
+															  margin-top: 0px;
+															  overflow: hidden;
+															  border: none;
+															  outline: none;
+															}
 
-																												.signUpLoginButton:hover {
-																												  background-color: #2890C1;
-																												}
+															.signUpLoginButton:hover {
+															  background-color: #2890C1;
+															}
 
-																												.formValidErrors {
-																												  font-family: Helvetica;
-																												  font-size: 13px;
-																												  font-weight: 600;
-																												  color: #EC3D3D;
-																													position: relative;
-																													top: -9px;
-																												}
+															.formValidErrors {
+															  font-family: Helvetica;
+															  font-size: 13px;
+															  font-weight: 600;
+															  color: #EC3D3D;
+																position: relative;
+																top: -9px;
+															}
 
-																												.passCheckMark {
-																												  height: 21px;
-																												  margin-left: -45px;
-																												  position: relative;
-																												  vertical-align: middle;
-																												  pointer-events: none;
-																												}`;
+															.passCheckMark {
+															  height: 21px;
+															  margin-left: -45px;
+															  position: relative;
+															  vertical-align: middle;
+															  pointer-events: none;
+															}`;
 
 	document.body.appendChild(canvas); // Imposes a low-opacity canvas on entire page
 	document.body.appendChild(signUpDialog); // Prompts the signup dialog
@@ -265,24 +265,8 @@ const registerPayload = function() {
 
 	let greyPassCheckMark = document.getElementById("greyPassCheckMark");
 	let greenPassCheckMark = document.getElementById("greenPassCheckMark");
-	let passwordField = document.getElementById("typesensePass");
-
-	let passwordHelpText = document.getElementById("passwordHelpText");
-	let invalidEmailError = document.getElementById("invalidEmailError");
-	let invalidCredentialsError = document.getElementById("invalidCredentialsError");
 
 	let exitButton = document.getElementById("registerExit");
-
-	// Changes grey checkmark to green when user types a password >= 10 characters
-	passwordField.onkeyup = function() {
-  	if (((this).value).length >= 10) {
-    	greyPassCheckMark.style.display = "none";
-    	greenPassCheckMark.style.display = "initial";
-  	} else {
-    	greenPassCheckMark.style.display = "none";
-    	greyPassCheckMark.style.display = "initial";
-  	}
-	}
 
 	// Exits dialog when user clicks "X" button
 	exitButton.onclick = function() {
@@ -346,30 +330,6 @@ const registerPayload = function() {
 		});
 	}
 
-	// Pull inputs from signup form and passes credentials to content script
-	signUpForm.onsubmit = function() {
-		let email = (this).typesenseEmail.value;
-		let password = (this).typesensePass.value;
-
-		if (password.length < 10) {
-			console.log("User's password is too short.");
-			passwordHelpText.style.color = "#EC3D3D";
-			(this).typesensePass.value = "";
-			invalidEmailError.style.display = "none";
-			signUpDialog.style.height = "288px";
-		} else {
-			console.log("User typed in a valid password.");
-			window.postMessage({type: "signup-credentials", value: {"email": email, "password": password, "fb_id": "test"/*getUserID()*/}}, '*');
-		}
-	}
-
-	// Pull inputs from login form and pass credentials to content script
-	loginForm.onsubmit = function() {
-		let email = (this).typesenseEmail.value;
-		let password = (this).typesensePass.value;
-		window.postMessage({type: "login-credentials", value: {"email": email, "password": password}}, '*');
-	}
-
 	// Signup and login validation
 	window.addEventListener('message', function(event) {
 		if (event.data.type == "registered" && event.data.value) {
@@ -428,10 +388,4 @@ window.addEventListener('message', function(event) {
 registerPort.onMessage.addListener(function(msg) {
 	if (msg.type == "registered")
 		window.postMessage({type: "registered", value: msg.value}, '*');
-});
-
-// Listens for login validation and passes to JS injection
-loginPort.onMessage.addListener(function(msg) {
-	if (msg.type == "logged-in")
-		window.postMessage({type: "logged-in", value: msg.value}, '*');
 });

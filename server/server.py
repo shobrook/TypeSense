@@ -1,24 +1,13 @@
 # Globals #
 
-
-# from bson.errors import InvalidId
 from bson.objectid import ObjectId
-from flask import Flask, jsonify, request, abort
-#from flask.ext.bcrypt import Bcrypt
-from flask_pymongo import PyMongo
+from flask import jsonify, request
 from textblob import TextBlob
 from pprint import pprint
 import hashlib
 
 DEBUG = True
 
-app = Flask(__name__)
-#bcrypt = Bcrypt(app)
-
-app.config['MONGO_DBNAME'] = 'typesensedb'
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/typesensedb'
-
-mongo = PyMongo(app)
 
 """
 DATA MODEL
@@ -33,12 +22,10 @@ Conversations: {"_id": ObjectId(), "messages": [{"hash": str(), "sentiment": int
 
 
 def analyze_sentiment(messages, conversation):
-	"""Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
+	"""
+	Takes an ordered list of dictionaries in format: [ { "author" : "", "message" : "" }, ...]
 	and returns dictionary in format: { "Hash": {"Sentiment" : 0, "Author" : "..."}, ...}. Sentiment between -1 and 1.
-	:param messages:
-	:param conversation: """
-
-	# https://pypi.python.org/pypi/textblob
+	"""
 
 	# To isolate sentiment impact of each msg, sentiment scores of (four msg) Cluster 1 - (three msg) Cluster 2
 	#
@@ -62,7 +49,7 @@ def analyze_sentiment(messages, conversation):
 		filtered_message = [msg for msg in conversation if msg["hash"] == last_message_hash]
 
 		# Memoization.
-		# If sent analysis needed
+		# Check if new sentiment analysis needed
 		if not filtered_message:
 			# Get sentiment of each message combo.
 			four_msg_sentiment = TextBlob(four_msg_combo).sentiment.polarity
@@ -80,72 +67,6 @@ def analyze_sentiment(messages, conversation):
 
 
 # Routing #
-
-
-@app.route("/")
-def main():
-	"""Default response; returns an error code."""
-	return 404
-
-#@app.route("/TypeSense/api/get_salt", methods=["GET"])
-#def get_salt():
-#	"""Returns user's email address to be used as a salt for hashing in background.js"""
-#	if not request.json or not "email" in request.json:
-#		abort(400, "new_user(): request.json does not exist or does not contain 'email'")
-
-	# Return salt in format: { "salt" : str(email) }
-#	for user in mongo.db.users.find():
-#		if user["email"] == request.json["email"]:
-#			return jsonify({"salt": user["email"]})
-
-@app.route("/TypeSense/api/create_user", methods=["POST"])
-def create_user():
-	"""Creates a new user document; also checks if email already exists. Payload
-    format: {'email': str(), 'password': str(), 'fb_id': str()}."""
-	if not request.json or not "email" and "password" and "fb_id" in request.json:
-		abort(400, "new_user(): request.json does not exist or does not contain requisites")
-
-	# Make sure the email doesn't already correspond to an account.
-	for user in mongo.db.users.find():
-		if user["email"] == request.json["email"]:
-			return jsonify({"registered": False})
-
-	# https://flask-bcrypt.readthedocs.io/en/latest/
-	# Hash already hashed and salted pw again, and store that hash in Mongo
-	#cdouble_pw_hash = bcrypt.generate_password_hash(request.json["password_hash"]).decode("utf-8")
-
-	print(request.json)
-
-	mongo.db.users.insert({
-		"email": request.json["email"],
-		"password": request.json["password"],
-		"fb_id": request.json["fb_id"],
-		"connections": []
-	})
-
-	return jsonify({"registered": True})
-
-
-@app.route("/TypeSense/api/validate_user", methods=["POST"])
-def validate_user():
-	"""Checks if login credentials are valid. Payload format: {'email': str(),
-    'password': str()}."""
-	if not request.json or not "email" and "password" in request.json:
-		abort(400, "check_user(): request.json does not exist or does not contain requisites")
-
-	# Password Authentication W/ bcrypt
-	# https://flask-bcrypt.readthedocs.io/en/latest/
-
-	for user in mongo.db.users.find():
-		if user["email"] == request.json["email"] and user["password"] == request.json["password"]:
-			# Hash singly hashed password from request.json and compare it to the value in mongoDB
-			#mongo_doubly_hashed_pw = mongo.db.users.find_one( {"email" : request.json["email"]} )["password_hash"]
-			#valid_pw = bcrypt.check_password_hash(mongo_doubly_hashed_pw, request.json["password_hash"])
-
-			return jsonify({"logged_in": True})
-
-	return jsonify({"logged_in": False})
-
 
 @app.route("/TypeSense/api/update_conversation", methods=["POST"])
 def update_conversation():
@@ -215,29 +136,10 @@ def update_conversation():
 # Error Handling #
 
 
-def error_print(status_code, error):
-	if DEBUG:
-		print("------------")
-		print("ERROR (" + str(status_code) + "): " + error)
-		print("------------")
-
-
-@app.errorhandler(400)
-def bad_request(error):
-	error_print(400, error.description)
-	return "Bad Request", 400
-
-
-@app.errorhandler(401)
-def bad_request(error):
-	error_print(401, error.description)
-	return "Unauthorized", 401
-
-
-@app.errorhandler(500)
-def internal_error(error):
-	error_print(500, error.description)
-	return "Internal Error", 500
+def insufficient_messages():
+	print("------------")
+	print("ERROR: Insufficient Messages")
+	print("------------")
 
 
 if __name__ == "__main__":
