@@ -69,7 +69,7 @@ const createGraph = (data) => {
 					.attr("x2", width / 2)
 					.attr("y2", height)
 					.style("stroke-width", 2)
-					.style("stroke", "#F1F0F0")
+					.style("stroke", "#1D3557")
 					.style("fill", '1');
 	graphSVG.append("line")
 					.attr("x1", 0)
@@ -77,7 +77,7 @@ const createGraph = (data) => {
 					.attr("x2", width)
 					.attr("y2", height - 1)
 					.style("stroke-width", 2)
-					.style("stroke", "#F1F0F0")
+					.style("stroke", "#1D3557")
 					.style("fill", '1');
 }
 
