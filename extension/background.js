@@ -31,26 +31,26 @@ const analyzeSentiment = (messages) => {
 	// TODO: Require VADER-js
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 	return [
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": true, "sentiment": .25},
-		{"message": "", "received": false, "sentiment": -.50},
-		{"message": "", "received": false, "sentiment": -.40}
+		{"message": "", "received": true, "sentiment": .25, "id": 0},
+		{"message": "", "received": true, "sentiment": .25, "id": 1},
+		{"message": "", "received": true, "sentiment": .25, "id": 2},
+		{"message": "", "received": false, "sentiment": -.50, "id": 3},
+		{"message": "", "received": false, "sentiment": -.50, "id": 4},
+		{"message": "", "received": false, "sentiment": -.50, "id": 5},
+		{"message": "", "received": true, "sentiment": .25, "id": 6},
+		{"message": "", "received": true, "sentiment": .25, "id": 7},
+		{"message": "", "received": true, "sentiment": .25, "id": 8},
+		{"message": "", "received": true, "sentiment": .25, "id": 9},
+		{"message": "", "received": true, "sentiment": .25, "id": 10},
+		{"message": "", "received": true, "sentiment": .25, "id": 11},
+		{"message": "", "received": false, "sentiment": -.50, "id": 12},
+		{"message": "", "received": false, "sentiment": -.50, "id": 13},
+		{"message": "", "received": false, "sentiment": -.50, "id": 14},
+		{"message": "", "received": true, "sentiment": .25, "id": 15},
+		{"message": "", "received": true, "sentiment": .25, "id": 16},
+		{"message": "", "received": true, "sentiment": .25, "id": 17},
+		{"message": "", "received": false, "sentiment": -.50, "id": 18},
+		{"message": "", "received": false, "sentiment": -.40, "id": 19}
 	] // TEMP
 }
 
