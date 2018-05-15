@@ -25,9 +25,11 @@ const eventListeners = () => {
 	}
 	*/
 
+	// Pull the the thread ID from the current URL
 	const getThreadID = () => {
-		// TODO: Pull the the thread ID from the current URL
-		return "temporaryId";
+		let threadID = document.getElementsByClassName("_3058 _ui9 _hh7 _s1- _52mr _3oh-")[0].getAttribute("threadid").match(/\d/g).join('');
+		console.log(threadID)
+		return threadID;
 	}
 
 	// Scrapes the last 23 messages in the current conversation (in chronological order)
