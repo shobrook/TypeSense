@@ -6,14 +6,14 @@ const createGraph = (data) => {
 	let height = 320;
 
 	var graphSVG = d3.select("#graph")
-							.append("svg")
-							.attr("width", width + margin["left"] + margin["right"])
-							.attr("height", height + margin["top"] + margin["bottom"])
-							.append('g')
-							.attr("transform", "translate(" + margin["left"] + ',' + margin["top"] + ')');
+									 .append("svg")
+									 .attr("width", width + margin["left"] + margin["right"])
+									 .attr("height", height + margin["top"] + margin["bottom"])
+									 .append('g')
+									 .attr("transform", "translate(" + margin["left"] + ',' + margin["top"] + ')');
 
 	// Sets the ranges
-	var y = d3.scaleBand().range([height, 0]).padding(0); // 0.52
+	var y = d3.scaleBand().range([height, 0]).padding(0.52);
 	var x = d3.scaleLinear().range([0, width]);
 
 	// Scale the range of the data in the domains
@@ -62,6 +62,7 @@ const createGraph = (data) => {
 					.attr("height", y.bandwidth())
 					.attr("rx", "1.5px");
 
+	// Appends the X and Y axes
 	graphSVG.append("line")
 					.attr("x1", width / 2)
 					.attr("y1", 0)
@@ -70,7 +71,6 @@ const createGraph = (data) => {
 					.style("stroke-width", 2)
 					.style("stroke", "#F1F0F0")
 					.style("fill", '1');
-
 	graphSVG.append("line")
 					.attr("x1", 0)
 					.attr("y1", height - 1)
