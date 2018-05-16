@@ -18,11 +18,12 @@ html, body {
   background-color: #f8f8f8;
   width: 100%;
   margin: 0px auto;
+  display: none;
 }
 
 #error-box p {
   font-size: 18px;
-  display: none;
+  padding: 20px;
 }
 
 #graph {
