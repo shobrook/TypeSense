@@ -7,7 +7,6 @@ const storage = chrome.storage.local;
 // Creates an asynchronous HTTP GET request
 const get = (url, credentials, callback) => {
   let xhr = new XMLHttpRequest();
-  xhr.setRequestHeader("Authorization", "Basic " + btoa(credentials["username"] + ':' + credentials["password"]));
   xhr.onreadystatechange = () => {
     if (xhr.readyState == 4 && xhr.status == 200) {
       callback(xhr.responseText);
@@ -15,8 +14,17 @@ const get = (url, credentials, callback) => {
   }
 
   xhr.open("GET", url, true);
+  xhr.setRequestHeader("Authorization", "Basic " + btoa(credentials["username"] + ':' + credentials["password"]));
   xhr.send(null);
 }
+
+let credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
+let url = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=" + "Team,%20I%20know%20that%20times%20are%20tough!%20Product%20sales%20have%20been%20disappointing%20for%20the%20past%20three%20quarters.%20We%20have%20a%20competitive%20product,%20but%20we%20need%20to%20do%20a%20better%20job%20of%20selling%20it!";
+
+let responseHandler = (response) => {
+  console.log(response);
+}
+get(url, credentials, responseHandler);
 
 // Creates an asynchronous HTTP POST request
 const post = (url, payload, callback) => {
