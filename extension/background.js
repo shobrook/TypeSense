@@ -1,6 +1,13 @@
 /* Globals */
 
 
+var NaturalLanguageUnderstandingV1 = require('watson-developer-cloud/natural-language-understanding/v1.js');
+var natural_language_understanding = new NaturalLanguageUnderstandingV1({
+  'username': '0fb95a85-04ac-4f6f-b056-41d8ef359906',
+  'password': 'WZERggRjjvkS',
+  'version': '2018-03-16'
+});
+
 // For calling GET and SET to the extension's local storage
 const storage = chrome.storage.local;
 
@@ -28,9 +35,54 @@ const message = (content) => {
 
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
-	// TODO: Use the Watson API to analyze emotional valence (joy, sadness, anger, disgust, etc.)
 	// TODO: Use VADER-js to analyze the compound valence of the conversation
-	// TODO: Output ordered list of objects, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
+	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
+
+	// TODO: Process each message individually
+
+	sentimentTable = []
+
+	allMessages = ""
+
+	// Iterate through messages and analyze sentiment for each message.
+	messages.forEach(function(element) {
+		// Create string of all messages.
+		allMessages = allMessages.concat("\n" + element)
+
+		var parameters = {
+	  		'html': element,
+	  		'features': {
+	   			'emotion': {}
+	  		}
+		};
+
+		natural_language_understanding.analyze(parameters, function(err, response) {
+		  if (err)
+		    console.log('error:', err);
+		  else
+		  	var emotions_dict = response["emotion"]["document"]["emotion"];
+		  	// TODO: Get key with largest absolute value and append that to the sentimentTable arr.
+		  	// sentimentTable.push()
+		    // console.log(JSON.stringify(response, null, 2));
+		});
+	});
+
+	// Process all messages in one string to get conversation emotion score
+	var parameters = {
+	  	'html': allMessages,
+	  	'features': {
+	   		'emotion': {}
+	  	}
+	};
+
+	natural_language_understanding.analyze(parameters, function(err, response) {
+	  if (err)
+	    console.log('error:', err);
+	  else
+	  	// Get key with largest absolute value and save that as the text to be displayed on bottom of graph.
+	    console.log(JSON.stringify(response, null, 2));
+	});
+
 	return [
 		{"message": "", "received": true, "sentiment": .25, "id": 0},
 		{"message": "", "received": true, "sentiment": .25, "id": 1},
