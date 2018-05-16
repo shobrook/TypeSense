@@ -20,15 +20,7 @@ html, body {
 }
 
 #error-box p {
-  font-size: 14px;
-}
-
-#logo {
-  width: 45%;
-  margin: auto;
-  margin-top: -13px;
-  display: block;
-
+  font-size: 18px;
 }
 
 #graph {
