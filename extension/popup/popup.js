@@ -43,24 +43,26 @@ const createGraph = (data) => {
 					})
 					.attr("fill", (table) => {
 						if (table["received"]) {
-							if (table["sentiment"] < 0)
+							if (table["sentiment"] < 0) {
 								return "#FF5E66";
-							else
+							} else {
 								return "#6DD792";
+							}
 						} else {
 							return "RGBA(0, 0, 0, 0.0)";
 						}
 					})
 					.attr("stroke-linecap", "round")
 					.attr("stroke", (table) => {
-						if (table["sentiment"] < 0)
+						if (table["sentiment"] < 0) {
 							return "#FF5E66";
-						else
+						} else {
 							return "#6DD792";
+						}
 					})
 					.attr("stroke-width", "2px")
 					.attr("height", y.bandwidth())
-					.attr("rx", "1.5px");
+					.attr("rx", "1.5px"); // QUESTION: What's this?
 
 	// Appends the X and Y axes
 	graphSVG.append("line")
@@ -81,6 +83,7 @@ const createGraph = (data) => {
 					.style("fill", '1');
 }
 
+// Pulls the current conversation's sentiment table and graphs it
 chrome.storage.local.get("currentThread", (sentimentTable) => {
 	createGraph(sentimentTable["currentThread"]);
 });

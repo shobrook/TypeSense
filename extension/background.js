@@ -1,12 +1,5 @@
 /* Globals */
 
-var NaturalLanguageUnderstandingV1 = require('watson-developer-cloud/natural-language-understanding/v1.js');
-
-var natural_language_understanding = new NaturalLanguageUnderstandingV1({
-  'username': '0fb95a85-04ac-4f6f-b056-41d8ef359906',
-  'password': 'WZERggRjjvkS',
-  'version': '2018-03-16'
-});
 
 // For calling GET and SET to the extension's local storage
 const storage = chrome.storage.local;
@@ -35,85 +28,44 @@ const message = (content) => {
 
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
+	// TODO: Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-	// TODO: Process each message individually
 
-	sentimentTable = []
+  // curl -X GET -u '21a9e424-69e0-4a8f-995c-19d1b5f9e72e':'xctC0k8jpWZy' 'https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=Team, I know things are tough right now but we will get through it, I swear!'
 
-	allMessages = ""
 
-	// Iterate through messages and analyze sentiment for each message.
-	messages.forEach(function(element) {
-		// Create string of all messages.
-		allMessages = allMessages.concat("\n" + element)
-
-		var parameters = {
-	  		'html': element,
-	  		'features': {
-	   			'emotion': {}
-	  		}
-		};
-
-		natural_language_understanding.analyze(parameters, function(err, response) {
-		  if (err)
-		    console.log('error:', err);
-		  else
-		  	var emotions_dict = response["emotion"]["document"]["emotion"];
-		  	// TODO: Get key with largest absolute value and append that to the sentimentTable arr.
-		  	// sentimentTable.push()
-		    // console.log(JSON.stringify(response, null, 2));
-		});
-	});
-
-	// Process all messages in one string to get conversation emotion score
-	var parameters = {
-	  	'html': allMessages,
-	  	'features': {
-	   		'emotion': {}
-	  	}
-	};
-
-	natural_language_understanding.analyze(parameters, function(err, response) {
-	  if (err)
-	    console.log('error:', err);
-	  else
-	  	// Get key with largest absolute value and save that as the text to be displayed on bottom of graph.
-	    console.log(JSON.stringify(response, null, 2));
-	});
 
 	return [
-		{"message": "", "received": true, "sentiment": .25, "id": 0},
-		{"message": "", "received": true, "sentiment": .25, "id": 1},
-		{"message": "", "received": true, "sentiment": .25, "id": 2},
-		{"message": "", "received": false, "sentiment": -.50, "id": 3},
-		{"message": "", "received": false, "sentiment": -.50, "id": 4},
-		{"message": "", "received": false, "sentiment": -.50, "id": 5},
-		{"message": "", "received": true, "sentiment": .25, "id": 6},
-		{"message": "", "received": true, "sentiment": .25, "id": 7},
-		{"message": "", "received": true, "sentiment": .25, "id": 8},
-		{"message": "", "received": true, "sentiment": .25, "id": 9},
-		{"message": "", "received": true, "sentiment": .25, "id": 10},
-		{"message": "", "received": true, "sentiment": .25, "id": 11},
-		{"message": "", "received": false, "sentiment": -.50, "id": 12},
-		{"message": "", "received": false, "sentiment": -.50, "id": 13},
-		{"message": "", "received": false, "sentiment": -.50, "id": 14},
-		{"message": "", "received": true, "sentiment": .25, "id": 15},
-		{"message": "", "received": true, "sentiment": .25, "id": 16},
-		{"message": "", "received": true, "sentiment": .25, "id": 17},
-		{"message": "", "received": false, "sentiment": -.50, "id": 18},
-		{"message": "", "received": false, "sentiment": -.40, "id": 19}
-	] // TEMP
+    {sentiment: -10, id: 0, received: true},
+    {sentiment: 40, id: 1, received: false},
+    {sentiment: -10, id: 2, received: true},
+    {sentiment: -50, id: 3, received: true},
+    {sentiment: 30, id: 4, received: false},
+    {sentiment: 60, id: 5, received: true},
+    {sentiment: 50, id: 6, received: true},
+    {sentiment: -20, id: 7, received: false},
+    {sentiment: -10, id: 8, received: true},
+    {sentiment: 40, id: 9, received: false},
+    {sentiment: -10, id: 10, received: true},
+    {sentiment: -50, id: 11, received: true},
+    {sentiment: 30, id: 12, received: false},
+    {sentiment: 60, id: 13, received: true},
+    {sentiment: 50, id: 14, received: true},
+    {sentiment: -20, id: 15, received: false},
+    {sentiment: -20, id: 16, received: false}
+  ] // TEMP
 }
 
 
-/* Event Listeners */
+/* Event Handlers */
 
 
-// Listens for messenger.com to be loaded and sends "inject-listeners" to listeners.js
+// Listens for messenger.com to be loaded and tells listeners.js to inject the event handlers
 chrome.webNavigation.onCompleted.addListener((details) => {
+	// BUG: Message is sometimes sent before the DOM is fully loaded
 	if (details.url.includes("messenger.com")) {
-		message({"message": "injectListeners"}); // Tells listeners.js to inject event listeners
+		message({"message": "injectListeners"});
 	}
 });
 
@@ -129,21 +81,22 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 */
 
-// Listens for long-lived port connections (from content scripts)
+// Opens long-lived port connections with content scripts
 chrome.runtime.onConnect.addListener((port) => {
 	port.onMessage.addListener((msg) => {
-		if (port.name == "listener") { // Handles requests from listeners.js
-			let sentimentTable = analyzeSentiment(msg.messages);
+    if (port.name == "listener") { // Handles requests from listeners.js
+      let sentimentTable = analyzeSentiment(msg.messages);
 
-			storage.set({"currentThread": sentimentTable}, () => { // TODO: Memoize conversations
-				console.log("Populated conversation's sentiment table.");
-			});
+      storage.set({"currentThread": sentimentTable}, () => { // TODO: Memoize conversations
+        console.log("Populated conversation's sentiment table.");
+      });
 
-			// Updates the browser action icon according to sentiment change
-			if (sentimentTable[sentimentTable.length - 1]["sentiment"] >= sentimentTable[sentimentTable.length - 2]["sentiment"]) // Sentiment increased
-				chrome.browserAction.setIcon({path: "../assets/icon_green.png"});
-			else // Sentiment decreased
-				chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
-		}
-	});
+      // Updates the browser action icon according to sentiment change
+      if (sentimentTable[sentimentTable.length - 1]["sentiment"] >= sentimentTable[sentimentTable.length - 2]["sentiment"]) { // Sentiment increased
+        chrome.browserAction.setIcon({path: "../assets/icon_green.png"});
+      } else { // Sentiment decreased
+        chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
+      }
+    }
+  });
 });
