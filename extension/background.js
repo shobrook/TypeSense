@@ -31,11 +31,6 @@ const analyzeSentiment = (messages) => {
 	// TODO: Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-
-  // curl -X GET -u '21a9e424-69e0-4a8f-995c-19d1b5f9e72e':'xctC0k8jpWZy' 'https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=Team, I know things are tough right now but we will get through it, I swear!'
-
-
-
 	return [
     {sentiment: -10, id: 0, received: true},
     {sentiment: 40, id: 1, received: false},
