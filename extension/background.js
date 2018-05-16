@@ -28,28 +28,33 @@ const message = (content) => {
 
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
-  // TODO: Use VADER-js to analyze the compound valence of the conversation
-	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0, "id": 0}, ...]
+	// TODO: Use VADER-js to analyze the compound valence of the conversation
+	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
+
+
+  // curl -X GET -u '21a9e424-69e0-4a8f-995c-19d1b5f9e72e':'xctC0k8jpWZy' 'https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=Team, I know things are tough right now but we will get through it, I swear!'
+
+
 
 	return [
-    {sentiment: -.5, id: 0, received: true},
-    {sentiment: -.4, id: 1, received: false},
-    {sentiment: .1, id: 2, received: true},
-    {sentiment: .5, id: 3, received: true},
-    {sentiment: -.3, id: 4, received: false},
-    {sentiment: .6, id: 5, received: true},
-    {sentiment: .5, id: 6, received: true},
-    {sentiment: .2, id: 7, received: false},
-    {sentiment: .1, id: 8, received: true},
-    {sentiment: -.4, id: 9, received: false},
-    {sentiment: .1, id: 10, received: true},
-    {sentiment: .5, id: 11, received: true},
-    {sentiment: -.3, id: 12, received: false},
-    {sentiment: .6, id: 13, received: true},
-    {sentiment: .9, id: 14, received: true},
-    {sentiment: -.2, id: 15, received: false},
-    {sentiment: -.3, id: 16, received: false}
-  ]; // TEMP
+    {sentiment: -10, id: 0, received: true},
+    {sentiment: 40, id: 1, received: false},
+    {sentiment: -10, id: 2, received: true},
+    {sentiment: -50, id: 3, received: true},
+    {sentiment: 30, id: 4, received: false},
+    {sentiment: 60, id: 5, received: true},
+    {sentiment: 50, id: 6, received: true},
+    {sentiment: -20, id: 7, received: false},
+    {sentiment: -10, id: 8, received: true},
+    {sentiment: 40, id: 9, received: false},
+    {sentiment: -10, id: 10, received: true},
+    {sentiment: -50, id: 11, received: true},
+    {sentiment: 30, id: 12, received: false},
+    {sentiment: 60, id: 13, received: true},
+    {sentiment: 50, id: 14, received: true},
+    {sentiment: -20, id: 15, received: false},
+    {sentiment: -20, id: 16, received: false}
+  ] // TEMP
 }
 
 
@@ -79,18 +84,19 @@ chrome.runtime.onInstalled.addListener((details) => {
 // Opens long-lived port connections with content scripts
 chrome.runtime.onConnect.addListener((port) => {
 	port.onMessage.addListener((msg) => {
-		if (port.name == "listener") { // Handles requests from listeners.js
-			let sentimentTable = analyzeSentiment(msg.messages);
+    if (port.name == "listener") { // Handles requests from listeners.js
+      let sentimentTable = analyzeSentiment(msg.messages);
 
-			storage.set({"currentThread": sentimentTable}, () => { // TODO: Memoize conversations
-				console.log("Populated conversation's sentiment table.");
-			});
+      storage.set({"currentThread": sentimentTable}, () => { // TODO: Memoize conversations
+        console.log("Populated conversation's sentiment table.");
+      });
 
-			// Updates the browser action icon according to sentiment change
-			if (sentimentTable[sentimentTable.length - 1]["sentiment"] >= sentimentTable[sentimentTable.length - 2]["sentiment"]) { // Sentiment increased
-				chrome.browserAction.setIcon({path: "../assets/icon_green.png"});
-			} else // Sentiment decreased
-				chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
-			}
-		});
-	});
+      // Updates the browser action icon according to sentiment change
+      if (sentimentTable[sentimentTable.length - 1]["sentiment"] >= sentimentTable[sentimentTable.length - 2]["sentiment"]) { // Sentiment increased
+        chrome.browserAction.setIcon({path: "../assets/icon_green.png"});
+      } else { // Sentiment decreased
+        chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
+      }
+    }
+  });
+});
