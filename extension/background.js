@@ -4,8 +4,21 @@
 // For calling GET and SET to the extension's local storage
 const storage = chrome.storage.local;
 
-/*
-// Creates an HTTP POST request
+// Creates an asynchronous HTTP GET request
+const get = (url, credentials, callback) => {
+  let xhr = new XMLHttpRequest();
+  xhr.setRequestHeader("Authorization", "Basic " + btoa(credentials["username"] + ':' + credentials["password"]));
+  xhr.onreadystatechange = () => {
+    if (xhr.readyState == 4 && xhr.status == 200) {
+      callback(xhr.responseText);
+    }
+  }
+
+  xhr.open("GET", url, true);
+  xhr.send(null);
+}
+
+// Creates an asynchronous HTTP POST request
 const post = (url, payload, callback) => {
 	let xhr = new XMLHttpRequest();
 	xhr.open("POST", url, true);
@@ -16,7 +29,6 @@ const post = (url, payload, callback) => {
 	}
 	xhr.send(JSON.stringify(payload));
 }
-*/
 
 // Sends a message to content scripts running in the current tab
 const message = (content) => {
@@ -30,6 +42,8 @@ const message = (content) => {
 const analyzeSentiment = (messages) => {
 	// TODO: Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
+
+  let url = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
 
 	return [
     {sentiment: -10, id: 0, received: true},
@@ -80,6 +94,9 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.runtime.onConnect.addListener((port) => {
 	port.onMessage.addListener((msg) => {
     if (port.name == "listener") { // Handles requests from listeners.js
+      // OPTIMIZE: Compare msg (scraped messages) w/ what's currently in local storage; find where the two sets stop intersecting,
+      // then analyze the remaining part of msg and append it to the local set, and slice to ensure it's at length 17
+
       let sentimentTable = analyzeSentiment(msg.messages);
 
       storage.set({"currentThread": sentimentTable}, () => { // TODO: Memoize conversations
