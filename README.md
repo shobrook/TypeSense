@@ -24,11 +24,16 @@ TypeSense makes it a little easier for those with developmental disorders, like 
 
 * Visualize the conversation's sentiment over time
 * See how each message impacted the overall sentiment
-* Predict the impact of messages on the conversation's sentiment before sending them
 
 ## Contributing
 
 To make a contribution, fork the repo, make your changes and then submit a pull request. If you've discovered a bug or have a feature request, create an [issue](https://github.com/shobrook/TypeSense/issues/new) and we'll take care of it! :)
+
+__Pending Features:__
+* Analyze/visualize the emotional tones of the conversation (anger, disgust, fear, joy, and sadness)
+* Analyze/visualize the language tones of who you're talking to (analytical, confident, and tentative)
+* Analyze/visualize the social tones of who you're talking to (openness, conscientiousness, extraversion, agreeableness, and emotional range)
+* Predict the impact of messages on the conversation's sentiment before sending them
 
 ## Development Team
 
