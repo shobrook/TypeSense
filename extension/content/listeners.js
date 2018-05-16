@@ -2,7 +2,7 @@
 
 
 const listenerPort = chrome.runtime.connect(window.localStorage.getItem("typesense-id"), {name: "listener"});
-const eventListeners = () => {
+const eventHandlers = () => {
 	/*
 	// Pulls the current recipient's Facebook ID
 	const getRecipientID = () => {
@@ -27,9 +27,7 @@ const eventListeners = () => {
 
 	// Pull the the thread ID from the current URL
 	const getThreadID = () => {
-		let threadID = document.getElementsByClassName("_3058 _ui9 _hh7 _s1- _52mr _3oh-")[0].getAttribute("threadid").match(/\d/g).join('');
-		console.log(threadID)
-		return threadID;
+		return document.getElementsByClassName("_3058 _ui9 _hh7 _s1- _52mr _3oh-")[0].getAttribute("threadid").match(/\d/g).join('');
 	}
 
 	// Scrapes the last 23 messages in the current conversation (in chronological order)
@@ -44,20 +42,21 @@ const eventListeners = () => {
 
 		console.log("Scraped all loaded messages.");
 
-		if (scrapedMessages.length > 23)
+		if (scrapedMessages.length > 23) {
 			return scrapedMessages.slice(scrapedMessages.length - 23);
-		else
+		} else {
 			return scrapedMessages;
+		}
 	}
 
 	// Listens for a new message
 	document.getElementById("js_1").addEventListener("DOMNodeInserted", (event) => {
     if (event.target.parentNode.id == "js_1") {
 			window.postMessage({type: "eventNotifications", value: {"threadID": getThreadID(), "messages": scrapeMessages()}}, '*');
-    }
+		}
 	}, false);
 
-	// Listens for a conversation change (technically a URL change)
+	// Listens for a conversation change
 	var oldLocation = location.href;
 	setInterval(function() {
 		if (location.href != oldLocation) {
@@ -67,13 +66,14 @@ const eventListeners = () => {
 		}
 	}, 100);
 
+	// Passed when first injected
 	window.postMessage({type: "eventNotifications", value: {"threadID": getThreadID(), "messages": scrapeMessages()}}, '*');
 }
 
 // Prepares the JS injection
 const injectListeners = () => {
-	var script = document.createElement("script");
-	script.textContent = "(" + eventListeners.toString() + ")();";
+	let script = document.createElement("script");
+	script.textContent = "(" + eventHandlers.toString() + ")();";
 	document.head.appendChild(script);
 }
 
