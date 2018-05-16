@@ -21,6 +21,7 @@ html, body {
 
 #error-box p {
   font-size: 18px;
+  display: none;
 }
 
 #graph {
