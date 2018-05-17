@@ -40,12 +40,33 @@ const message = (content) => {
 	});
 }
 
+/**
+ * Constructs URL for Watson API request.
+ *
+ * messages - Either a message or a list of messages.
+ *
+ * @return String               URL for API request.
+ */
+const urlConstruction = (messages, isList=false) => {
+	// TODO: Append emotion feature to end of API request URL
+
+	let endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+
+	if (isList) {
+		messages = messages.join(" ");
+	}
+
+	var newUrl = endpoint + messages.replace(/ /, "%20"); // + features requested
+	console.log(newUrl)
+	return newUrl
+}
+
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
 	// TODO: (v2) Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-	let endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+
 	let allMessages = ""
 
 	// Iterate through messages and analyze sentiment for each message.
@@ -53,13 +74,7 @@ const analyzeSentiment = (messages) => {
 
 		// Create string of all messages.
 		allMessages = allMessages.concat("\n" + element)
-
-		// Replace all spaces in message with "%20" and append to url
-		// TODO: Append emotion feature to end of API request URL
-		var newUrl = endpoint + element.replace(/ /, "%20"); // + features requested
-		console.log(newUrl)
-
-		get(newUrl, credentials, responseHandler);
+		get(urlConstruction(element), credentials, responseHandler);
 	});
 
 	// TODO: Sentiment analysis on all messages together
