@@ -60,6 +60,11 @@ const analyzeSentiment = (messages) => {
 
 		get(newUrl, credentials, responseHandler);
 	});
+<<<<<<< HEAD
+=======
+
+	// TODO: Sentiment analysis on all messages together
+>>>>>>> master
 
 	return [
     {sentiment: -10, id: 0, received: true},
