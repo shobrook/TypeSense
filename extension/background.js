@@ -4,6 +4,10 @@
 // For calling GET and SET to the extension's local storage
 const storage = chrome.storage.local;
 
+// Endpoint and login credentials for analyzing tone with IBM Watson
+const endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+const credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
+
 // Creates an asynchronous HTTP GET request
 const get = (url, credentials, callback) => {
   let xhr = new XMLHttpRequest();
@@ -45,23 +49,29 @@ const analyzeSentiment = (messages) => {
 	// TODO: (v2) Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-	let endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+  // Measures sentiment as a growing window
+  const methodOne = (messages) => {
+    var sentimentTable = [];
 
-	// Iterate through messages and analyze sentiment for each message.
-	messages.forEach(function(element) {
+    let windows = Array.apply(null, messages).map((_, idx) => {
+      return messages.slice(0, idx + 1);
+    });
+    for (var idx = 0; idx < messages.length; idx++) {
+      let payload = windows[idx].join(' ').replace(/ /g, "%20");
+      get(endpoint + payload, credentials, (response) => {
+        sentimentTable.push({
+          "id": idx,
+          "message": messages[idx]["message"],
+          "received": messages[idx]["received"],
+          "sentiment": response
+        });
+      });
+    }
 
-		// Create string of all messages.
-		allMessages = allMessages.concat("\n" + element)
+    return sentimentTable;
+  }
 
-		// Replace all spaces in message with "%20" and append to url
-		// TODO: Append emotion feature to end of API request URL
-		var newUrl = baseUrl + element.replace(/ /, "%20"); // + features requested
-		console.log(newUrl)
-
-		get(newUrl, credentials, responseHandler);
-	});
-
-	// TODO: Sentiment analysis on all messages together
+  //return methodOne(messages);
 
 	return [
     {sentiment: -10, id: 0, received: true},
