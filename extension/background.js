@@ -14,13 +14,7 @@ const get = (url, credentials, callback) => {
   }
 
   xhr.open("GET", url, true);
-
   xhr.setRequestHeader("Authorization", "Basic " + btoa(credentials["username"] + ':' + credentials["password"]));
-  //xhr.setRequestHeader("Access-Control-Allow-Origin", '*');
-  //xhr.setRequestHeader("Access-Control-Allow-Credentials", "true");
-  //xhr.setRequestHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
-  //xhr.setRequestHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
-
   xhr.send(null);
 }
 
@@ -48,16 +42,24 @@ const message = (content) => {
 
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
-	// TODO: Use VADER-js to analyze the compound valence of the conversation
+	// TODO: (v2) Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-  let credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
-  let url = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=" + "Team,%20I%20know%20that%20times%20are%20tough!%20Product%20sales%20have%20been%20disappointing%20for%20the%20past%20three%20quarters.%20We%20have%20a%20competitive%20product,%20but%20we%20need%20to%20do%20a%20better%20job%20of%20selling%20it!";
+	let endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
 
-  let responseHandler = (response) => {
-    console.log(response);
-  }
-  get(url, credentials, responseHandler);
+	// Iterate through messages and analyze sentiment for each message.
+	messages.forEach(function(element) {
+
+		// Create string of all messages.
+		allMessages = allMessages.concat("\n" + element)
+
+		// Replace all spaces in message with "%20" and append to url
+		// TODO: Append emotion feature to end of API request URL
+		var newUrl = baseUrl + element.replace(/ /, "%20"); // + features requested
+		console.log(newUrl)
+
+		get(newUrl, credentials, responseHandler);
+	});
 
 	return [
     {sentiment: -10, id: 0, received: true},
