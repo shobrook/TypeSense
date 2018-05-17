@@ -8,12 +8,12 @@ const storage = chrome.storage.local;
 const endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
 const credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
 
-// Creates an asynchronous HTTP GET request
-const get = (url, credentials, callback) => {
+// Creates a synchronous HTTP GET request
+const get = (url, credentials) => { // NOTE: Add `callback` parameter to make asynchronous
   let xhr = new XMLHttpRequest();
   xhr.onreadystatechange = () => {
     if (xhr.readyState == 4 && xhr.status == 200) {
-      callback(xhr.responseText);
+      return xhr.responseText; // NOTE: Replace with `return callback(xhr.responseText);` to make asynchronous
     }
   }
 
@@ -44,35 +44,70 @@ const message = (content) => {
 	});
 }
 
-// Transforms a Messages object into a SentimentTable object
-const analyzeSentiment = (messages) => {
-	// TODO: (v2) Use VADER-js to analyze the compound valence of the conversation
-	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
+// Pos/neg signs for Watson tone categories
+const toneSigns = {
+  "sadness": -1,
+  "anger": -1,
+  "fear": -1,
+  "tentative": 1,
+  "joy": 1,
+  "analytical": 1,
+  "confident": 1
+}
 
+// Transforms a messages object into a sentimentTable object
+const analyzeSentiment = (messages) => {
   // Measures sentiment as a growing window
   const methodOne = (messages) => {
-    var sentimentTable = [];
+    let sentimentTable = [];
 
-    let windows = Array.apply(null, messages).map((_, idx) => {
-      return messages.slice(0, idx + 1);
+    let windows = Array.apply(null, Array(messages.length)).map((_, idx) => {
+      let slicedMessageObjs = messages.slice(0, idx + 1);
+      let messageWindows = slicedMessageObjs.map((messageObj) => { return messageObj["message"]; });
+
+      return messageWindows;
     });
     for (var idx = 0; idx < messages.length; idx++) {
       let payload = windows[idx].join(' ').replace(/ /g, "%20");
+      /*
+      // NOTE: This is what an asynchronous request *should* look like, but the callback
+      // function can't access the sentimentTable or messages variables for some reason.
+
       get(endpoint + payload, credentials, (response) => {
+        let tones = JSON.parse(response)["document_tone"]["tones"];
+        let sentimentScores = tones.map((tone) => { return toneSigns[tone["tone_id"]] * tone["score"]; });
+
         sentimentTable.push({
           "id": idx,
           "message": messages[idx]["message"],
           "received": messages[idx]["received"],
-          "sentiment": response
+          "sentiment": sentimentScores.reduce((sum, score) => { return sum + score; })
         });
+      });
+      */
+
+      let tones = JSON.parse(get(endpoint + payload, credentials))["document_tone"]["tones"];
+      let sentimentScores = tones.map((tone) => { return toneSigns[tone["tone_id"]] * tone["score"]; });
+
+      sentimentTable.push({
+        "id": idx,
+        "message": messages[idx]["message"],
+        "received": messages[idx]["received"],
+        "sentiment": sentimentScores.reduce((sum, score) => { return sum + score; })
       });
     }
 
     return sentimentTable;
   }
 
-  //return methodOne(messages);
+  let sentimentTable = methodOne(messages);
+  if (sentimentTable.length > 17) {
+    return sentimentTable.slice(sentimentTable.length - 17);
+  } else {
+    return sentimentTable;
+  }
 
+  /*
 	return [
     {sentiment: -10, id: 0, received: true},
     {sentiment: 40, id: 1, received: false},
@@ -91,7 +126,8 @@ const analyzeSentiment = (messages) => {
     {sentiment: 50, id: 14, received: true},
     {sentiment: -20, id: 15, received: false},
     {sentiment: -20, id: 16, received: false}
-  ] // TEMP
+  ]
+  */
 }
 
 
