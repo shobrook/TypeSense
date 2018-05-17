@@ -21,6 +21,7 @@ const get = (url, credentials, callback) => {
 let credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
 let url = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=" + "Team,%20I%20know%20that%20times%20are%20tough!%20Product%20sales%20have%20been%20disappointing%20for%20the%20past%20three%20quarters.%20We%20have%20a%20competitive%20product,%20but%20we%20need%20to%20do%20a%20better%20job%20of%20selling%20it!";
 
+// TODO: Process response from Watson API.
 let responseHandler = (response) => {
   console.log(response);
 }
@@ -48,10 +49,30 @@ const message = (content) => {
 
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
-	// TODO: Use VADER-js to analyze the compound valence of the conversation
+	// TODO: (v2) Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-  let url = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+	let baseUrl = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+
+	// Perform sentiment analysis on each message individually
+	sentimentTable = []
+	allMessages = ""
+
+	// Iterate through messages and analyze sentiment for each message.
+	messages.forEach(function(element) {
+
+		// Create string of all messages.
+		allMessages = allMessages.concat("\n" + element)
+
+		// Replace all spaces in message with "%20" and append to url
+		// TODO: Append emotion feature to end of API request URL
+		var newUrl = baseUrl + element.replace(/ /, "%20"); // + features requested
+		console.log(newUrl)
+
+		get(newUrl, credentials, responseHandler);
+	});
+
+	// TODO: Sentiment analysis on all messages together
 
 	return [
     {sentiment: -10, id: 0, received: true},
