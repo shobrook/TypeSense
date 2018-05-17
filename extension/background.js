@@ -71,7 +71,45 @@ const analyzeSentiment = (messages) => {
     return sentimentTable;
   }
 
-  //return methodOne(messages);
+  // Measures sentiment by isolating the impact of each message in context.
+  const methodFour = (messages) => {
+  	var sentimentTable = [];
+
+  	let message_trips = []
+	for (var i = 0; i <= messages.length - 2; i++) {
+		message_trips.append(messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get("message"))
+	}
+
+	let message_quads = []
+	for (var i = 0; i <= messages.length - 3; i++) {
+		message_quads.append((messages[i]["message"] + " " + messages[i + 1]["message"] + " " + messages[i + 2]["message"] + " " + messages[i + 3]["message"], messages[i + 3]["author"], messages[i + 3]["message"])
+	}
+
+	message_sentiments = []
+	for (var idx = 0; idx < message_quads.length; idx++) {
+		four_msg_combo, author, last_message = message_quads[idx][0], message_quads[idx][1], message_quads[idx][2]
+		three_msg_combo = message_trips[idx]
+		console.log("FOUR COMBO:", four_msg_combo)
+		console.log("AUTHOR:", author)
+		console.log("LAST_MESSAGE:", last_message)
+
+		// Get sentiment of each message combo.
+		let payload = four_msg_combo.join(' ').replace(/ /g, "%20");
+		get(endpoint + payload, credentials, (response_4msg) => {
+			let payload = three_msg_combo.join(' ').replace(/ /g, "%20");
+			get(endpoint + payload, credentials, (response_3msg) => {
+				sentimentTable.push({
+					"id": idx,
+					"message": messages[idx]["message"],
+					"received": messages[idx]["received"],
+					"sentiment": response_4msg - response_3msg
+				});
+			});
+		});
+	}
+
+  	return sentimentTable;
+  }
 
 	return [
     {sentiment: -10, id: 0, received: true},
