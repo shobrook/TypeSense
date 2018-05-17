@@ -18,15 +18,7 @@ const get = (url, credentials, callback) => {
   xhr.send(null);
 }
 
-let credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
-let url = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=" + "Team,%20I%20know%20that%20times%20are%20tough!%20Product%20sales%20have%20been%20disappointing%20for%20the%20past%20three%20quarters.%20We%20have%20a%20competitive%20product,%20but%20we%20need%20to%20do%20a%20better%20job%20of%20selling%20it!";
-
-// TODO: Process response from Watson API.
-let responseHandler = (response) => {
-  console.log(response);
-}
-get(url, credentials, responseHandler);
-
+/*
 // Creates an asynchronous HTTP POST request
 const post = (url, payload, callback) => {
 	let xhr = new XMLHttpRequest();
@@ -38,6 +30,7 @@ const post = (url, payload, callback) => {
 	}
 	xhr.send(JSON.stringify(payload));
 }
+*/
 
 // Sends a message to content scripts running in the current tab
 const message = (content) => {
@@ -52,11 +45,7 @@ const analyzeSentiment = (messages) => {
 	// TODO: (v2) Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-	let baseUrl = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
-
-	// Perform sentiment analysis on each message individually
-	sentimentTable = []
-	allMessages = ""
+	let endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
 
 	// Iterate through messages and analyze sentiment for each message.
 	messages.forEach(function(element) {
