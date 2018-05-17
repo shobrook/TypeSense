@@ -40,28 +40,84 @@ const message = (content) => {
 	});
 }
 
+/**
+ * Constructs URL for Watson API request.
+ *
+ * messages - Either a message or a list of messages.
+ *
+ * @return String               URL for API request.
+ */
+const urlConstruction = (messages, isList=false) => {
+	// TODO: Append emotion feature to end of API request URL
+
+	let endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+
+	if (isList) {
+		messages = messages.join(" ");
+	}
+
+	var newUrl = endpoint + messages.replace(/ /, "%20"); // + features requested
+	console.log(newUrl)
+	return newUrl
+}
+
 // Transforms a Messages object into a SentimentTable object
 const analyzeSentiment = (messages) => {
 	// TODO: (v2) Use VADER-js to analyze the compound valence of the conversation
 	// TODO: Output ordered list of dictionaries, formatted as [{"message": "...", "received": "...", "sentiment": 0}, ...]
 
-	let endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
+
+	let allMessages = ""
 
 	// Iterate through messages and analyze sentiment for each message.
 	messages.forEach(function(element) {
 
 		// Create string of all messages.
 		allMessages = allMessages.concat("\n" + element)
-
-		// Replace all spaces in message with "%20" and append to url
-		// TODO: Append emotion feature to end of API request URL
-		var newUrl = baseUrl + element.replace(/ /, "%20"); // + features requested
-		console.log(newUrl)
-
-		get(newUrl, credentials, responseHandler);
+		get(urlConstruction(element), credentials, responseHandler);
 	});
 
 	// TODO: Sentiment analysis on all messages together
+	// JON CHECK THIS OUT
+
+	/**
+	 * To isolate sentiment impact of each msg, sentiment scores of (four msg) Cluster 1 - (three msg) Cluster 2
+	 *
+	 *  Cluster 1: ABCD
+	 *  Cluster 2: ABC
+	 *
+	 *	Cluster 1 - Cluster 2 isolates the impact of D, in context
+	 */
+
+	let trips_of_messages = []
+
+	for (var i = 0; i <= messages.length - 2; i++) {
+		trips_of_messages.append(messages[i].get("message") + " " + messages[i + 1].get("message") + " " + messages[i + 2].get("message"))
+	}
+
+	let quads_of_messages = []
+
+	for (var i = 0; i <= messages.length - 3; i++) {
+		quads_of_messages.append((messages[i]["message"] + " " + messages[i + 1]["message"] + " " + messages[i + 2]["message"] + " " + messages[i + 3]["message"], messages[i + 3]["author"], messages[i + 3]["message"])
+	}
+
+	message_sentiments = []
+
+	for (var index = 0; index < quads_of_messages.length; index++) {
+		four_msg_combo, author, last_message = quads_of_messages[index][0], quads_of_messages[index][1], quads_of_messages[index][2]
+		three_msg_combo = trips_of_messages[index]
+		print("Four COMBO:", four_msg_combo)
+		print("AUTHOR:", author)
+		print("LAST_MESSAGE:", last_message)
+
+		// TODO:Get sentiment of each message combo. Depends on Request Handler
+		four_msg_sentiment = TextBlob(four_msg_combo).sentiment.polarity
+		three_msg_sentiment = TextBlob(three_msg_combo).sentiment.polarity
+
+		// message_sentiments = [(last_message_hash, sentiment, author), ... ]
+		message_sentiments.append((last_message_hash, four_msg_sentiment - three_msg_sentiment, author))
+	}
+
 
 	return [
     {sentiment: -10, id: 0, received: true},
