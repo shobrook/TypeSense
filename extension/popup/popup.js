@@ -85,7 +85,7 @@ const createGraph = (data) => {
 
 // Pulls the current conversation's sentiment table and graphs it
 chrome.storage.local.get("currentThread", (sentimentTable) => {
-	if (sentimentTable["currentThread"].length > 1) {
+	if (sentimentTable["currentThread"].length < 17) {
 		document.getElementById("box").style.display = "none";
 		document.getElementById("error-box").style.display = "inline";
 	} else {

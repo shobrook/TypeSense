@@ -10,7 +10,8 @@
     "storage",
     "activeTab",
     "tabs",
-    "webNavigation"
+    "webNavigation",
+    "https://gateway.watsonplatform.net/"
   ],
   "browser_action": {
     "default_title": "TypeSense",
