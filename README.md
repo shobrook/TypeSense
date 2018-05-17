@@ -45,3 +45,7 @@ Developed and maintained by [Jonathan Shobrook](https://github.com/shobrook) and
 * [Adam Gernz](https://github.com/agernz)
 * [Jon Shobrook](https://github.com/shobrook)
 * [Rishi Masand](https://github.com/darthbatman)
+
+## Donations 
+
+This is free, open-source software. If you'd like to support the development of future projects, or say thanks for this one, you can donate BTC at `1BFqZayDhiU9YjhTuAsWcnu6qU5RDaxV8Z`. Everything is appreciated!
