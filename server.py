@@ -27,15 +27,12 @@ TONE_SIGNS = {
 def growingWindow(messages):
     windows = [[message["message"] for message in messages[:idx + 1]] for idx in range(len(messages))]
 
-    print(windows)
-    sentiment_table =  [{
+    return [{
         "id": idx,
         "message": messages[idx]["message"],
         "received": messages[idx]["received"],
         "sentiment": round(100 * ANALYZER.polarity_scores(' '.join(windows[idx]))["compound"])
     } for idx in range(len(messages))]
-    print(sentiment_table)
-    return sentiment_table
 
 
 ## Routes ##
