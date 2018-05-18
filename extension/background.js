@@ -4,11 +4,17 @@
 // For calling GET and SET to the extension's local storage
 const storage = chrome.storage.local;
 
+// Endpoint for analyzing message sentiment on the TypeSense REST API
+const endpoint = "http://127.0.0.1:5000/TypeSense/api/analyze_sentiment"
+
+/*
 // Endpoint and login credentials for analyzing tone with IBM Watson
 const endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
 const credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
+*/
 
-// Creates a synchronous HTTP GET request
+/*
+// Creates an asynchronous HTTP GET request
 const get = (url, credentials, callback) => {
   let xhr = new XMLHttpRequest();
   xhr.onreadystatechange = () => {
@@ -21,20 +27,20 @@ const get = (url, credentials, callback) => {
   xhr.setRequestHeader("Authorization", "Basic " + btoa(credentials["username"] + ':' + credentials["password"]));
   xhr.send(null);
 }
+*/
 
-/*
 // Creates an asynchronous HTTP POST request
 const post = (url, payload, callback) => {
 	let xhr = new XMLHttpRequest();
 	xhr.open("POST", url, true);
 	xhr.setRequestHeader("Content-type", "application/json");
 	xhr.onreadystatechange = () => {
-		if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) // readyState == 4
+		if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) { // readyState == 4
 			callback(xhr.responseText);
+    }
 	}
 	xhr.send(JSON.stringify(payload));
 }
-*/
 
 // Sends a message to content scripts running in the current tab
 const message = (content) => {
@@ -44,6 +50,7 @@ const message = (content) => {
 	});
 }
 
+/*
 // +/- signs for Watson tone categories
 const toneSigns = {
   "sadness": -1,
@@ -67,7 +74,7 @@ const analyzeSentiment = (messages) => {
   });
   for (let idx = 0; idx < messages.length; idx++) {
     let payload = windows[idx].join(' ').replace(/ /g, "%20");
-    //let newMessages = messages; // TEMP
+    let newMessages = messages;
 
     get(endpoint + payload, credentials, (response) => {
       let tones = JSON.parse(response)["document_tone"]["tones"];
@@ -85,6 +92,7 @@ const analyzeSentiment = (messages) => {
 
   return sentimentTable;
 }
+*/
 
 
 /* Event Handlers */
@@ -113,10 +121,8 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.runtime.onConnect.addListener((port) => {
 	port.onMessage.addListener((msg) => {
     if (port.name == "listener") { // Handles requests from listeners.js
-      let sentimentTable = analyzeSentiment(msg.messages);
-
-      // This is genuinely pathetic
-      setTimeout(() => {
+      post(endpoint, msg, (response) => {
+        let sentimentTable = JSON.parse(response)["sentiment_table"];
         sentimentTable.sort((m, n) => { return m["id"] - n["id"]; });
 
         if (sentimentTable.length > 17) {
@@ -133,7 +139,7 @@ chrome.runtime.onConnect.addListener((port) => {
         } else { // Sentiment decreased
           chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
         }
-      }, 10000)
+      });
     }
   });
 });
