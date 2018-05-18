@@ -43,8 +43,8 @@ const eventHandlers = () => {
 
 		console.log("Scraped all loaded messages.");
 
-		if (scrapedMessages.length > 23) {
-			return scrapedMessages.slice(scrapedMessages.length - 23);
+		if (scrapedMessages.length > 17) {
+			return scrapedMessages.slice(scrapedMessages.length - 17);
 		} else {
 			return scrapedMessages;
 		}
