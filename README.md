@@ -8,11 +8,9 @@ TypeSense is a chrome extension that analyzes and displays a Facebook Messenger 
 
 <!--Demo gif goes here-->
 
-### Installation
+### Usage
 
-TypeSense will soon be published in the Chrome Web Store. Stay tuned!
-
-<!--Once installed, TypeSense requires no further setup. Just open a conversation and click the TypeSense icon to visualize its sentiment.-->
+TypeSense is available for download on the [Chrome Web Store](https://chrome.google.com/webstore/detail/typesense/clobcenoagdldmnkhnglomkgcfhoaiff). Once installed, TypeSense requires no further setup – just open a conversation and click the TypeSense icon to visualize its sentiment.
 
 ## Why?
 
@@ -24,15 +22,16 @@ TypeSense makes it a little easier for those with developmental disorders, like 
 
 * Visualize the conversation's sentiment over time
 * See how each message impacted the overall sentiment
+* Real-time updating of the TypeSense icon's color based on the sentiment of the most recent message
 
 ## Contributing
 
 To make a contribution, fork the repo, make your changes and then submit a pull request. If you've discovered a bug or have a feature request, create an [issue](https://github.com/shobrook/TypeSense/issues/new) and we'll take care of it! :)
 
 __Pending Features:__
-* Analyze/visualize the emotional tones of the conversation (anger, disgust, fear, joy, and sadness)
-* Analyze/visualize the language tones of who you're talking to (analytical, confident, and tentative)
-* Analyze/visualize the social tones of who you're talking to (openness, conscientiousness, extraversion, agreeableness, and emotional range)
+* Analyze and visualize the emotional tones of the conversation (anger, disgust, fear, joy, and sadness)
+* Analyze and visualize the language tones of who you're talking to (analytical, confident, and tentative)
+* Analyze and visualize the social tones of who you're talking to (openness, conscientiousness, extraversion, agreeableness, and emotional range)
 * Predict the impact of messages on the conversation's sentiment before sending them
 
 ## Development Team
@@ -48,4 +47,4 @@ Developed and maintained by [Jonathan Shobrook](https://github.com/shobrook) and
 
 ## Donations 
 
-This is free, open-source software. If you'd like to support the development of future projects, or say thanks for this one, you can donate BTC at `1BFqZayDhiU9YjhTuAsWcnu6qU5RDaxV8Z`. Everything is appreciated!
+This is free, open-source software. If you'd like to support the development of future projects, or say thanks for this one, you can donate Bitcoin at `1BFqZayDhiU9YjhTuAsWcnu6qU5RDaxV8Z`. Everything is appreciated!
