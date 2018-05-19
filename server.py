@@ -31,8 +31,25 @@ def growingWindow(messages):
         "id": idx,
         "message": messages[idx]["message"],
         "received": messages[idx]["received"],
-        "sentiment": round(100 * ANALYZER.polarity_scores(' '.join(windows[idx]))["compound"])
+        "sentiment": round(100 * (.5 * ANALYZER.polarity_scores(' '.join(windows[idx]))["compound"]))
     } for idx in range(len(messages))]
+
+
+def inIsolation(messages):
+    return [{
+        "id": idx,
+        "message": messages[idx]["message"],
+        "received": messages[idx]["received"],
+        "sentiment": 10 * round(10 * ANALYZER.polarity_scores(messages[idx]["message"])["compound"]) if ANALYZER.polarity_scores(messages[idx]["message"])["compound"] != 0 else 10
+    } for idx in range(len(messages))]
+
+
+def rateOfChange(messages):
+    return # TODO: @shobrook
+
+
+def tripletROC(messages):
+    return # TODO: @alichtman
 
 
 ## Routes ##
@@ -43,7 +60,8 @@ def analyze_sentiment():
     if not request.json or not "messages" in request.json:
         abort(400, "new_connection(): request.json does not exist or does not contain 'messages'")
 
-    return jsonify({"sentiment_table": growingWindow(request.json["messages"])})
+    #return jsonify({"sentiment_table": growingWindow(request.json["messages"])})
+    return jsonify({"sentiment_table": inIsolation(request.json["messages"])})
 
 
 ## Main ##
