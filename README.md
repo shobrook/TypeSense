@@ -12,6 +12,8 @@ TypeSense is a chrome extension that analyzes and displays a Facebook Messenger 
 
 TypeSense is available for download on the [Chrome Web Store](https://chrome.google.com/webstore/detail/typesense/clobcenoagdldmnkhnglomkgcfhoaiff). Once installed, TypeSense requires no further setup – just open a conversation and click the TypeSense icon to visualize its sentiment.
 
+<!--__How to read the graph:__-->
+
 ## Why?
 
 Conversations can be ambiguous. They're even more ambiguous online, where the body language and intonation cues that usually help us interpret meaning are lost. People without neurological disorders misunderstand each other all the time – sarcasm makes it hard to know for sure what someone means, and idioms are confusing! __Imagine how hard it must be for people with social disabilities.__
