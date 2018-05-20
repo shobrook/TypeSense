@@ -8,7 +8,7 @@ TypeSense is a chrome extension that analyzes and displays a Facebook Messenger 
 
 <!--Demo gif goes here-->
 
-### Usage
+### Installation
 
 TypeSense is available for download on the [Chrome Web Store](https://chrome.google.com/webstore/detail/typesense/clobcenoagdldmnkhnglomkgcfhoaiff). Once installed, TypeSense requires no further setup – just open a conversation and click the TypeSense icon to visualize its sentiment.
 
