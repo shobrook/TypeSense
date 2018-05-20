@@ -4,7 +4,7 @@
 
 ### Purpose
 
-TypeSense is a chrome extension that analyzes and displays a Facebook Messenger conversation's sentiment in real-time, designed to help the developmentally disabled. Winner of the best Healthcare-related OSS hack at `HackIllinois 2018`.
+TypeSense is a chrome extension that analyzes and displays a Facebook Messenger conversation's sentiment in real-time, designed to help the developmentally disabled. Winner of the best healthcare-related OSS hack at [HackIllinois 2018](https://devpost.com/software/typesense).
 
 <!--Demo gif goes here-->
 
@@ -14,7 +14,7 @@ TypeSense is available for download on the [Chrome Web Store](https://chrome.goo
 
 ## Why?
 
-Conversations can be ambiguous. They're even more ambiguous online, where the body language and intonation cues that usually help us interpret meaning are lost. People without neurological disorders misunderstand each other all the time – sarcasm makes it hard to know for sure what someone means, and idioms are confusing! _Imagine how hard it must be for people with social disabilities._
+Conversations can be ambiguous. They're even more ambiguous online, where the body language and intonation cues that usually help us interpret meaning are lost. People without neurological disorders misunderstand each other all the time – sarcasm makes it hard to know for sure what someone means, and idioms are confusing! __Imagine how hard it must be for people with social disabilities.__
 
 TypeSense makes it a little easier for those with developmental disorders, like autism, to understand the emotions of others when chatting online.
 
@@ -34,7 +34,11 @@ __Pending Features:__
 * Analyze and visualize the social tones of who you're talking to (openness, conscientiousness, extraversion, agreeableness, and emotional range)
 * Predict the impact of messages on the conversation's sentiment before sending them
 
-## Development Team
+## Technologies
+
+TypeSense is built on VADER, a lexicon and rule-based sentiment analysis tool that is specifically attuned to sentiments expressed in social media. We plan to release some more features, noted above in _pending features_, that will leverage IBM Watson's natural language API.
+
+## Team
 
 Developed and maintained by [Jonathan Shobrook](https://github.com/shobrook) and [Aaron Lichtman](https://github.com/alichtman).
 
