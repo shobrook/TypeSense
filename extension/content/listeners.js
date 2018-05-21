@@ -27,8 +27,7 @@ const eventHandlers = () => {
 
 	// Pull the the thread ID from the current URL
 	const getThreadID = () => {
-		//return document.getElementsByClassName("_3058 _ui9 _hh7 _s1- _52mr _3oh-")[0].getAttribute("threadid").match(/\d/g).join('');
-		return "tempID";
+		return String(document.getElementsByClassName("_3058 _ui9 _hh7 _s1- _52mr _3oh-")[0].getAttribute("threadid").match(/\d/g).join(''));
 	}
 
 	// Scrapes the last 23 messages in the current conversation (in chronological order)
@@ -92,6 +91,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Pulls scraped messages from JS injection and passes to background script
 window.addEventListener("message", (event) => {
-	if (event.data.type == "eventNotifications")
+	if (event.data.type == "eventNotifications") {
+		console.log("Pulled scraped messages from JS injection.");
 		listenerPort.postMessage({threadID: event.data.value.threadID, messages: event.data.value.messages});
+	}
 });
