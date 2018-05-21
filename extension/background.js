@@ -7,14 +7,7 @@ const storage = chrome.storage.local;
 // Endpoint for analyzing message sentiment on the TypeSense REST API
 const endpoint = "http://127.0.0.1:5000/TypeSense/api/analyze_sentiment"
 
-/*
-// Endpoint and login credentials for analyzing tone with IBM Watson
-const endpoint = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2018-05-01&text=";
-const credentials = {"username": "21a9e424-69e0-4a8f-995c-19d1b5f9e72e", "password": "xctC0k8jpWZy"};
-*/
-
-/*
-// Creates an asynchronous HTTP GET request
+// Creates an HTTP GET request
 const get = (url, credentials, callback) => {
   let xhr = new XMLHttpRequest();
   xhr.onreadystatechange = () => {
@@ -27,19 +20,18 @@ const get = (url, credentials, callback) => {
   xhr.setRequestHeader("Authorization", "Basic " + btoa(credentials["username"] + ':' + credentials["password"]));
   xhr.send(null);
 }
-*/
 
-// Creates an asynchronous HTTP POST request
+// Creates an HTTP POST request
 const post = (url, payload, callback) => {
 	let xhr = new XMLHttpRequest();
 	xhr.open("POST", url, true);
 	xhr.setRequestHeader("Content-type", "application/json");
 	xhr.onreadystatechange = () => {
 		if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) { // readyState == 4
-			callback(xhr.responseText);
+			callback(xhr.responseText, payload["threadID"]);
     }
 	}
-	xhr.send(JSON.stringify(payload));
+	xhr.send(JSON.stringify(payload["messages"]));
 }
 
 // Sends a message to content scripts running in the current tab
@@ -50,49 +42,7 @@ const message = (content) => {
 	});
 }
 
-/*
-// +/- signs for Watson tone categories
-const toneSigns = {
-  "sadness": -1,
-  "anger": -1,
-  "fear": -1,
-  "tentative": -1,
-  "joy": 1,
-  "analytical": 1,
-  "confident": 1
-}
-
-// Transforms a messages object into a sentimentTable object
-const analyzeSentiment = (messages) => {
-  var sentimentTable = [];
-
-  let windows = Array.apply(null, Array(messages.length)).map((_, idx) => {
-    let slicedMessageObjs = messages.slice(0, idx + 1);
-    let messageWindows = slicedMessageObjs.map((messageObj) => { return messageObj["message"]; });
-
-    return messageWindows;
-  });
-  for (let idx = 0; idx < messages.length; idx++) {
-    let payload = windows[idx].join(' ').replace(/ /g, "%20");
-    let newMessages = messages;
-
-    get(endpoint + payload, credentials, (response) => {
-      let tones = JSON.parse(response)["document_tone"]["tones"];
-      let sentimentScores = tones.map((tone) => { return toneSigns[tone["tone_id"]] * tone["score"]; });
-      let newMessages = messages;
-
-      sentimentTable.push({
-        "id": idx,
-        "message": newMessages[idx]["message"],
-        "received": newMessages[idx]["received"],
-        "sentiment": sentimentScores.length > 0 ? Math.round(100 * (sentimentScores.reduce((sum, score) => { return sum + score; }, 0) / sentimentScores.length)) : 50
-      });
-    });
-  }
-
-  return sentimentTable;
-}
-*/
+storage.set({"100003186456548": []}, () => { return; }); // TEMP: For testing
 
 
 /* Event Handlers */
@@ -105,7 +55,6 @@ chrome.webNavigation.onCompleted.addListener((details) => {
 	}
 });
 
-/*
 // Listens for when the extension is first installed or updated
 chrome.runtime.onInstalled.addListener((details) => {
 	if (details.reason == "install") {
@@ -115,31 +64,51 @@ chrome.runtime.onInstalled.addListener((details) => {
 		console.log("Updated from " + details.previousVersion + " to " + thisVersion + " :)");
 	}
 });
-*/
 
 // Opens long-lived port connections with content scripts
 chrome.runtime.onConnect.addListener((port) => {
 	port.onMessage.addListener((msg) => {
     if (port.name == "listener") { // Handles requests from listeners.js
-      post(endpoint, msg, (response) => {
-        let sentimentTable = JSON.parse(response)["sentiment_table"];
-        sentimentTable.sort((m, n) => { return m["id"] - n["id"]; });
+			storage.get(msg["threadID"], (conversation) => {
+				// Memoization of analyzed messages (only works for the inIsolation() method)
+				var newMessages = msg["messages"];
+				var oldMessages = conversation[msg["threadID"]];
 
-        if (sentimentTable.length > 17) {
-          sentimentTable = sentimentTable.slice(sentimentTable.length - 17);
-        }
+				for (let newIdx = 0; newIdx < newMessages.length; newIdx++) {
+					for (let oldIdx = 0; oldIdx < oldMessages.length; oldIdx++) {
+						// Stores sentiment of matching message in cache
+						if (newMessages[newIdx]["message"] == oldMessages[oldIdx]["message"]) {
+							newMessages[newIdx]["sentiment"] = oldMessages[oldIdx]["sentiment"];
+							break;
+						}
+					}
+				}
 
-        storage.set({"currentThread": sentimentTable}, () => { // TODO: Memoize conversations
-          console.log(sentimentTable);
-        });
+        let payload = {"messages": newMessages, "threadID": msg["threadID"]};
+				post(endpoint, payload, (response, threadID) => {
+					let sentimentTable = JSON.parse(response)["sentiment_table"];
+					sentimentTable.sort((m, n) => { return m["id"] - n["id"]; });
 
-        // Updates the browser action icon according to sentiment change
-        if (sentimentTable[sentimentTable.length - 1]["sentiment"] >= sentimentTable[sentimentTable.length - 2]["sentiment"]) { // Sentiment increased
-          chrome.browserAction.setIcon({path: "../assets/icon_green.png"});
-        } else { // Sentiment decreased
-          chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
-        }
-      });
+					if (sentimentTable.length > 17) {
+						sentimentTable = sentimentTable.slice(sentimentTable.length - 17);
+					}
+
+          storage.set({threadID: sentimentTable}, () => {
+            console.log("Updated thread's sentiment table.");
+          });
+
+          storage.set({"currentThread": sentimentTable}, () => {
+            console.log("Updated current thread's sentiment table.");
+          });
+
+          // Updates the browser action icon according to sentiment change
+          if (sentimentTable[sentimentTable.length - 1]["sentiment"] >= sentimentTable[sentimentTable.length - 2]["sentiment"]) { // Sentiment increased
+            chrome.browserAction.setIcon({path: "../assets/icon_green.png"});
+          } else { // Sentiment decreased
+            chrome.browserAction.setIcon({path: "../assets/icon_red.png"});
+          }
+				});
+			});
     }
   });
 });
